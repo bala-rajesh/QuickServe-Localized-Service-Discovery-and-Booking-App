@@ -1,6 +1,10 @@
 import React from 'react';
+import { useRecoilValue } from 'recoil';
+import { pendingRequestsSelector } from '../state/selectors';
 
 const BookingRequestsTable = () => {
+    const pendingRequests = useRecoilValue(pendingRequestsSelector);
+
     return (
         <div className="flex flex-col">
             <div className="flex justify-between items-center pb-3">
@@ -18,39 +22,21 @@ const BookingRequestsTable = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr className="border-t border-border-light/20 dark:border-border-dark">
-                            <td className="h-[72px] px-4 py-2 text-sm">Jane Smith</td>
-                            <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">House Cleaning</td>
-                            <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">Oct 26, 2:00 PM</td>
-                            <td className="h-[72px] px-4 py-2 text-sm">
-                                <div className="flex gap-2">
-                                    <button className="flex h-8 items-center justify-center rounded-md bg-secondary px-3 text-xs font-bold text-text-light">Accept</button>
-                                    <button className="flex h-8 items-center justify-center rounded-md bg-transparent px-3 text-xs font-bold text-text-light/70 dark:text-text-dark/70 ring-1 ring-inset ring-border-light dark:ring-border-dark">Decline</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr className="border-t border-border-light/20 dark:border-border-dark">
-                            <td className="h-[72px] px-4 py-2 text-sm">Carlos Ray</td>
-                            <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">Plumbing Repair</td>
-                            <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">Oct 27, 10:00 AM</td>
-                            <td className="h-[72px] px-4 py-2 text-sm">
-                                <div className="flex gap-2">
-                                    <button className="flex h-8 items-center justify-center rounded-md bg-secondary px-3 text-xs font-bold text-text-light">Accept</button>
-                                    <button className="flex h-8 items-center justify-center rounded-md bg-transparent px-3 text-xs font-bold text-text-light/70 dark:text-text-dark/70 ring-1 ring-inset ring-border-light dark:ring-border-dark">Decline</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr className="border-t border-border-light/20 dark:border-border-dark">
-                            <td className="h-[72px] px-4 py-2 text-sm">Aisha Khan</td>
-                            <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">Garden Maintenance</td>
-                            <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">Oct 27, 4:00 PM</td>
-                            <td className="h-[72px] px-4 py-2 text-sm">
-                                <div className="flex gap-2">
-                                    <button className="flex h-8 items-center justify-center rounded-md bg-secondary px-3 text-xs font-bold text-text-light">Accept</button>
-                                    <button className="flex h-8 items-center justify-center rounded-md bg-transparent px-3 text-xs font-bold text-text-light/70 dark:text-text-dark/70 ring-1 ring-inset ring-border-light dark:ring-border-dark">Decline</button>
-                                </div>
-                            </td>
-                        </tr>
+                        {pendingRequests.map(request => (
+                            <tr key={request.id} className="border-t border-border-light/20 dark:border-border-dark">
+                                <td className="h-[72px] px-4 py-2 text-sm">{request.customer}</td>
+                                <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">{request.service}</td>
+                                <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">
+                                    {new Date(request.datetime).toLocaleString()}
+                                </td>
+                                <td className="h-[72px] px-4 py-2 text-sm">
+                                    <div className="flex gap-2">
+                                        <button className="flex h-8 items-center justify-center rounded-md bg-secondary px-3 text-xs font-bold text-text-light hover:brightness-90">Accept</button>
+                                        <button className="flex h-8 items-center justify-center rounded-md bg-transparent px-3 text-xs font-bold text-text-light/70 hover:text-text-light dark:text-text-dark/70 hover:bg-Decline  ring-1 ring-inset ring-border-light dark:ring-border-dark">Decline</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
