@@ -1,40 +1,22 @@
 import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import SideNavBar from '../components/SideNavBar';
 import TopNavBar from '../components/TopNavBar';
-import DashboardPage from './Subpages/DashboardPage';
-import ProfileDetailPage from './Subpages/ProfileDetailPage';
 
 const ServiceProviderPage = () => {
-  const [activeView, setActiveView] = useState('dashboard');
+  const [isSideNavOpen, setIsSideNavOpen] = useState(true);
 
-  const viewToTitle = {
-    dashboard: "Dashboard",
-    profile: "Profile Details",
-    bookings: "Bookings",
-    services: "My Services",
-    calendar: "Calendar",
-    earnings: "Earnings",
-    settings: "Settings",
-  };
-
-  const renderContent = () => {
-    switch (activeView) {
-      case 'dashboard':
-        return <DashboardPage />;
-      case 'profile':
-        return <ProfileDetailPage />;
-      default:
-        return <div>Not Found</div>;
-    }
+  const toggleSideNav = () => {
+    setIsSideNavOpen(!isSideNavOpen);
   };
 
   return (
-    <div className="flex h-screen">
-      <SideNavBar activeView={activeView} setActiveView={setActiveView} />
-      <div className="flex flex-1 flex-col">
-        <TopNavBar title={viewToTitle[activeView] || 'Dashboard'} />
-        <main className="flex-1 overflow-y-auto p-8">
-          {renderContent()}
+    <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+      <TopNavBar toggleSideNav={toggleSideNav} isSideNavOpen={isSideNavOpen} />
+      <div className="flex flex-1 overflow-hidden">
+        <SideNavBar isSideNavOpen={isSideNavOpen} />
+        <main className="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
+          <Outlet /> {/* Child routes will be rendered here */}
         </main>
       </div>
     </div>
