@@ -7,6 +7,7 @@ import Schedule from '../../components/Schedule';
 const DashboardPage = () => {
   return (
     <div className="flex flex-col gap-8">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
       <StatsSection />
       <div className="grid grid-cols-3 gap-8">
         <div className="col-span-3 lg:col-span-2 flex flex-col gap-8">
