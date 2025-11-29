@@ -28,7 +28,10 @@ const Schedule = () => {
                                 </div>
                                 <div>
                                     <p className="font-medium">{booking.service}</p>
-                                    <p className="text-sm text-text-light/70 dark:text-text-dark/70">{time} - {booking.customer}</p>
+                                    <div className="text-sm text-text-light/70 dark:text-text-dark/70">
+                                        <span>{time} - {booking.customer}</span>
+                                        {booking.amount && <span className="font-bold text-secondary"> - ₹{booking.amount.toLocaleString('en-IN')}</span>}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -36,7 +39,6 @@ const Schedule = () => {
                 ) : (
                     <p className="text-sm text-text-light/70 dark:text-text-dark/70">No upcoming bookings for this week.</p>
                 )}
-                <button className="mt-2 w-full flex items-center justify-center h-10 rounded-lg bg-background-light dark:bg-background-dark text-sm font-medium hover:bg-primary/10 dark:hover:bg-primary/20">View Full Calendar</button>
             </div>
         </div>
     );

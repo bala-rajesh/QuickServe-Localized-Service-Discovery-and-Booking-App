@@ -1,32 +1,27 @@
 import React from 'react';
-import QuickServeLogo from './icons/QuickServeLogo';
+import { NavLink, Link } from 'react-router-dom';
 import DashboardIcon from './icons/DashboardIcon';
 import BookOnlineIcon from './icons/BookOnlineIcon';
 import InventoryIcon from './icons/InventoryIcon';
-import CalendarMonthIcon from './icons/CalendarMonthIcon';
 import PaymentsIcon from './icons/PaymentsIcon';
-import SettingsIcon from './icons/SettingsIcon';
 import PersonIcon from './icons/PersonIcon';
+import LogoutIcon from './icons/LogoutIcon';
 
-const SideNavBar = ({ activeView, setActiveView }) => {
+const SideNavBar = ({ isSideNavOpen }) => {
     const navItems = [
         { id: 'profile', icon: <PersonIcon />, label: 'Profile Details' },
         { id: 'dashboard', icon: <DashboardIcon />, label: 'Dashboard' },
         { id: 'bookings', icon: <BookOnlineIcon />, label: 'Bookings' },
         { id: 'services', icon: <InventoryIcon />, label: 'My Services' },
-        { id: 'calendar', icon: <CalendarMonthIcon />, label: 'Calendar' },
         { id: 'earnings', icon: <PaymentsIcon />, label: 'Earnings' },
-        { id: 'settings', icon: <SettingsIcon />, label: 'Settings' },
     ];
 
     return (
-        <aside className="flex w-64 flex-col border-r border-border-light/20 dark:border-border-dark bg-card-light dark:bg-card-dark">
-            <div className="flex h-16 items-center gap-3 border-b border-border-light/20 dark:border-border-dark px-6">
-                <div className="size-7 text-primary">
-                    <QuickServeLogo />
-                </div>
-                <h2 className="text-xl font-bold">Quick Serve</h2>
-            </div>
+        <aside
+            className={`flex flex-col border-r border-border-light/20 dark:border-border-dark bg-card-light dark:bg-card-dark pt-4 transition-all duration-300 ease-in-out ${
+                isSideNavOpen ? 'w-64' : 'w-0'
+            }`}
+        >
             <div className="flex flex-1 flex-col justify-between p-4">
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-3 px-2">
@@ -38,23 +33,29 @@ const SideNavBar = ({ activeView, setActiveView }) => {
                     </div>
                     <nav className="flex flex-col gap-2 pt-4">
                         {navItems.map((item) => (
-                            <button
+                            <NavLink
                                 key={item.id}
-                                onClick={() => setActiveView(item.id)}
-                                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${activeView === item.id
-                                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                                        : 'hover:bg-primary/10 dark:hover:bg-primary/20'
-                                    }`}
+                                to={item.id}
+                                className={({ isActive }) =>
+                                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${isActive ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-primary/10 dark:hover:bg-primary/20'}`
+                                }
                             >
                                 {item.icon}
                                 <p>{item.label}</p>
-                            </button>
+                            </NavLink>
                         ))}
                     </nav>
+                    <button
+                        onClick={() => alert('Logout clicked!')} // Replace with actual logout logic
+                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/20 mt-4"
+                    >
+                        <LogoutIcon />
+                        <p>Logout</p>
+                    </button>
                 </div>
-                <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold">
+                <Link to="/service-provider/services" state={{ addService: true }} className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold">
                     <span className="truncate">Add New Service</span>
-                </button>
+                </Link>
             </div>
         </aside>
     );
