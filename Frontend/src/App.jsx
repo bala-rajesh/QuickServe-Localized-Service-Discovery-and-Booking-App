@@ -6,16 +6,9 @@ import ProfileDetailPage from './pages/Subpages/ProfileDetailPage';
 import BookingsPage from './pages/Subpages/BookingsPage';
 import MyServicesPage from './pages/Subpages/MyServicesPage';
 import EarningsPage from './pages/Subpages/EarningsPage';
-import { useLoadInitialData } from './hooks/useBookings';
 import './index.css';
 
 function App() {
-  const loadInitialData = useLoadInitialData();
-
-  useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
-
   return (
     <BrowserRouter>
       <div className="App">
