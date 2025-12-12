@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 import { pendingRequestsSelector } from '../state/selectors';
-import { bookingsState, statusFilterState } from '../state/atoms';
-import { useUpdateBooking } from '../hooks/useBookings';
+import { statusFilterState } from '../state/atoms';
 
-const BookingRequestsTable = () => {
+const BookingRequestsTable = ({ onAccept, onDecline }) => {
     const pendingRequests = useRecoilValue(pendingRequestsSelector);
     const [editingAmountId, setEditingAmountId] = useState(null);
     const [amountValue, setAmountValue] = useState('');
-    const updateBooking = useUpdateBooking();
     const navigate = useNavigate();
     const setStatusFilter = useSetRecoilState(statusFilterState);
 
@@ -22,7 +20,8 @@ const BookingRequestsTable = () => {
     const handleSaveAmount = (bookingId) => {
         const newAmount = parseFloat(amountValue);
         if (isNaN(newAmount)) return;
-        updateBooking(bookingId, { amount: newAmount, providerChanges: true });
+        // This functionality would require a dedicated API endpoint to update the price.
+        // For now, it only updates the local UI state.
         setEditingAmountId(null);
         setAmountValue('');
     };
@@ -57,49 +56,49 @@ const BookingRequestsTable = () => {
                     <tbody>
                         {pendingRequests.map(request => (
                             <tr
-                                key={request.id}
-                                className={`border-t border-border-light/20 dark:border-border-dark ${new Date(request.datetime) < new Date() ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
+                                key={request.bookingId}
+                                className={`border-t border-border-light/20 dark:border-border-dark ${new Date(request.scheduledDate) < new Date() ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
                             >
                                 <td className="px-4 py-3 text-sm">
                                     <div>
-                                        <div className="font-bold text-text-light dark:text-text-dark">{request.customer}</div>
-                                        <div className="text-xs text-gray-500">{request.phone}</div>
-                                        <div className="text-xs text-gray-500">{request.address}</div>
+                                        <div className="font-bold text-text-light dark:text-text-dark">{request.customerName}</div>
+                                        <div className="text-xs text-gray-500">{request.customerContactPhone}</div>
+                                        <div className="text-xs text-gray-500">{request.jobLocationAddress}</div>
                                     </div>
                                 </td>
                                 <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">
-                                    {request.service}
+                                    {request.serviceTitle}
                                 </td>
                                 <td className="h-[72px] px-4 py-2 text-sm font-semibold text-secondary">
-                                    {editingAmountId === request.id ? ( // In edit mode
+                                    {editingAmountId === request.bookingId ? ( // In edit mode
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="number"
                                                 placeholder="Amount"
-                                                defaultValue={request.amount || ''}
+                                                defaultValue={request.agreedPrice || ''}
                                                 onChange={(e) => setAmountValue(e.target.value)}
                                                 className="w-20 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm sm:text-xs"
                                             />
-                                            <button onClick={() => handleSaveAmount(request.id)} className="flex h-8 items-center justify-center rounded-md bg-primary px-3 text-xs font-bold text-white hover:brightness-90">Save</button>
+                                            <button onClick={() => handleSaveAmount(request.bookingId)} className="flex h-8 items-center justify-center rounded-md bg-primary px-3 text-xs font-bold text-white hover:brightness-90">Save</button>
                                             <button onClick={() => setEditingAmountId(null)} className="text-xs text-gray-500 hover:underline">Cancel</button>
                                         </div>
                                     ) : ( // Not in edit mode
-                                        <div onClick={() => { setEditingAmountId(request.id); setAmountValue(request.amount || ''); }} className="cursor-pointer p-2 -m-2">
-                                            {request.amount ? `₹${request.amount.toLocaleString('en-IN')}` : <span className="text-gray-400 font-normal">Add Amount</span>}
+                                        <div onClick={() => { setEditingAmountId(request.bookingId); setAmountValue(request.agreedPrice || ''); }} className="cursor-pointer p-2 -m-2">
+                                            {request.agreedPrice ? `₹${request.agreedPrice.toLocaleString('en-IN')}` : <span className="text-gray-400 font-normal">Add Amount</span>}
                                         </div>
                                     )}
                                 </td>
                                 <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">
-                                    {formatDate(request.datetime)}
+                                    {formatDate(request.scheduledDate)}
                                 </td>
                                 <td className="h-[72px] px-4 py-2 text-sm">
                                     <div className="flex items-center gap-2">
-                                        {request.amount && editingAmountId !== request.id && !request.providerChanges && (
-                                            <button onClick={() => updateBooking(request.id, { status: 'confirmed' })} className="flex h-8 items-center justify-center rounded-md bg-secondary px-3 text-xs font-bold text-text-light hover:brightness-90">Accept</button>
+                                        {request.agreedPrice && editingAmountId !== request.bookingId && (
+                                            <button onClick={() => onAccept(request.bookingId)} className="flex h-8 items-center justify-center rounded-md bg-secondary px-3 text-xs font-bold text-text-light hover:brightness-90">Accept</button>
                                         )}
 
                                         <button
-                                            onClick={() => updateBooking(request.id, { status: 'declined' })}
+                                            onClick={() => onDecline(request.bookingId)}
                                             className="flex h-8 items-center justify-center rounded-md bg-transparent px-3 text-xs font-bold text-text-light/70 hover:text-text-light dark:text-text-dark/70 hover:bg-Decline ring-1 ring-inset ring-border-light dark:ring-border-dark"
                                         >Decline</button>
                                     </div>

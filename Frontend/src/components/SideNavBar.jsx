@@ -53,7 +53,7 @@ const SideNavBar = ({ isSideNavOpen }) => {
                         <p>Logout</p>
                     </button>
                 </div>
-                <Link to="/service-provider/services" state={{ addService: true }} className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold">
+                <Link to="/service-provider/services?action=create" className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold">
                     <span className="truncate">Add New Service</span>
                 </Link>
             </div>

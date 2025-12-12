@@ -35,7 +35,7 @@ const StatsSection = () => {
             </button>
             <div className="flex flex-col gap-2 rounded-lg bg-card-light dark:bg-card-dark p-6 border border-border-light/20 dark:border-border-dark">
                 <p className="text-base font-medium">Service Rating</p>
-                <p className="tracking-light text-3xl font-bold">4.8/5</p>
+                <p className="tracking-light text-3xl font-bold">{stats.averageRating ? `${stats.averageRating.toFixed(1)}/5` : 'N/A'}</p>
             </div>
         </div>
     );
