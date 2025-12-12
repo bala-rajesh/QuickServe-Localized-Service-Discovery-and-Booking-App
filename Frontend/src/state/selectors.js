@@ -1,27 +1,19 @@
 import { selector } from 'recoil';
-import { bookingsState, earningsState, statusFilterState, dateFilterState, earningsFilterState, earningsDateContextState } from './atoms';
+import { bookingsState, earningsState, statusFilterState, dateFilterState, earningsFilterState, earningsDateContextState, dashboardListsState, dashboardStatsState, dashboardChartsState } from './atoms';
 
 export const pendingRequestsSelector = selector({
     key: 'pendingRequestsSelector',
     get: ({ get }) => {
-        const bookings = get(bookingsState);
-        return bookings.filter(booking => booking.status === 'pending').slice(0, 4);
+        const lists = get(dashboardListsState);
+        return lists.newRequests;
     },
 });
 
 export const upcomingBookingsSelector = selector({
     key: 'upcomingBookingsSelector',
     get: ({ get }) => {
-        const bookings = get(bookingsState);
-        const now = new Date();
-        const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-        return bookings
-            .filter(booking => {
-                const bookingDate = new Date(booking.datetime);
-                return booking.status === 'confirmed' && bookingDate >= now && bookingDate <= oneWeekFromNow;
-            })
-            .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+        const lists = get(dashboardListsState);
+        return lists.upcomingBookings;
     },
 });
 
@@ -82,29 +74,13 @@ export const earningsOverviewSelector = selector({
 export const statsSelector = selector({
     key: 'statsSelector',
     get: ({ get }) => {
-        const bookings = get(bookingsState);
-
-        const now = new Date();
-        const totalUpcoming = bookings.filter(b => b.status === 'confirmed' && new Date(b.datetime) >= now).length;
-        const totalPending = bookings.filter(b => b.status === 'pending').length;
-
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-
-        const todaysEarnings = bookings
-            .filter(b => {
-                const bookingDate = new Date(b.datetime);
-                return b.status === 'completed' &&
-                       b.amount &&
-                       bookingDate >= startOfToday &&
-                       bookingDate <= endOfToday;
-            })
-            .reduce((sum, b) => sum + b.amount, 0);
-
+        // Directly return the pre-calculated stats from the API.
+        const stats = get(dashboardStatsState);
         return {
-            pendingRequests: totalPending,
-            upcomingBookings: totalUpcoming,
-            totalEarnings: todaysEarnings,
+            pendingRequests: stats.pendingRequestsCount,
+            upcomingBookings: stats.upcomingCount,
+            totalEarnings: stats.todayEarnings,
+            averageRating: stats.averageRating,
         };
     },
 });
@@ -229,27 +205,9 @@ export const filteredEarningsChartSelector = selector({
 export const dashboardEarningsChartSelector = selector({
     key: 'dashboardEarningsChartSelector',
     get: ({ get }) => {
-        const bookings = get(bookingsState);
-        const completedBookings = bookings.filter(b => b.status === 'completed' && b.amount);
-        const now = new Date();
-
-        const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999);
-
-        const weekData = dayLabels.map(label => ({ label, earnings: 0 }));
-
-        completedBookings
-            .filter(b => new Date(b.datetime) >= startOfWeek && new Date(b.datetime) <= endOfWeek)
-            .forEach(b => {
-                const dayIndex = new Date(b.datetime).getDay();
-                if (weekData[dayIndex]) weekData[dayIndex].earnings += b.amount;
-            });
-        return weekData;
+        // Directly return the pre-calculated chart data from the API.
+        const chartData = get(dashboardChartsState);
+        // Map the 'day' property to 'label' for the chart component
+        return chartData.map(item => ({ label: item.day, earnings: item.earnings }));
     }
 });
