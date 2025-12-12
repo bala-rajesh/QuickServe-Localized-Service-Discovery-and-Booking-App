@@ -1,159 +1,280 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useProfile } from '../../hooks/useProfile';
 
 const ProfileDetailPage = () => {
-  const { profile, loadProfile, updateProfile } = useProfile();
-  const [formData, setFormData] = useState(profile);
-  const [errors, setErrors] = useState({});
+    const { loading, error, profile, updateProfile } = useProfile();
+    const [formData, setFormData] = useState({});
+    const [isEditingBasic, setIsEditingBasic] = useState(false);
+    const [isEditingHours, setIsEditingHours] = useState(false);
 
-  // Load profile data when component mounts
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    const resetForm = useCallback(() => {
+        if (profile) {
+            setFormData({
+                ...profile,
+                workingHours: (profile.workingHours && profile.workingHours.length > 0)
+                    ? profile.workingHours
+                    : [
+                        { day: 'Monday', open: '09:00', close: '17:00', closed: false },
+                        { day: 'Tuesday', open: '09:00', close: '17:00', closed: false },
+                        { day: 'Wednesday', open: '09:00', close: '17:00', closed: false },
+                        { day: 'Thursday', open: '09:00', close: '17:00', closed: false },
+                        { day: 'Friday', open: '09:00', close: '17:00', closed: false },
+                        { day: 'Saturday', open: '10:00', close: '15:00', closed: false },
+                        { day: 'Sunday', open: '', close: '', closed: true },
+                    ]
+            });
+        }
+    }, [profile]);
 
-  // When global profile state changes, update local form data
-  useEffect(() => {
-    setFormData(profile);
-  }, [profile]);
+    // Initialize form data when profile loads
+    useEffect(() => {
+        resetForm();
+    }, [resetForm]);
 
-  const validateField = (name, value) => {
-    let error = '';
-    if (name === 'email') {
-      // A more robust regex based on standard email structure.
-      if (value && !/^[a-z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
-        error = 'Please enter a valid email address.';
-      }
-    }
-    if (name === 'phone') {
-      // Simple 10-digit Indian phone number validation
-      if (value && !/^[6-9]\d{9}$/.test(value)) {
-        error = 'Please enter a valid 10-digit phone number.';
-      }
-    }
-    setErrors(prev => ({ ...prev, [name]: error }));
-  };
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    validateField(name, value);
-  };
+    const handleWorkingHoursChange = (index, field, value) => {
+        const updatedHours = [...formData.workingHours];
+        updatedHours[index] = { ...updatedHours[index], [field]: value };
+        setFormData(prev => ({ ...prev, workingHours: updatedHours }));
+    };
 
-  const handleSaveChanges = (e) => {
-    e.preventDefault();
-    if (Object.values(errors).some(error => error)) {
-      alert('Please fix the errors before saving.');
-      return;
-    }
-    updateProfile(formData);
-    alert('Profile saved!');
-  };
+    const handleSaveBasic = async () => {
+        try {
+            await updateProfile(formData);
+            setIsEditingBasic(false);
+        } catch (e) {
+            // Error handled in hook
+        }
+    };
 
-  const calculateProfileCompletion = () => {
-    const fields = ['businessName', 'personalName', 'serviceCategory', 'serviceArea', 'tagline', 'about', 'phone', 'email', 'pincode', 'avatarUrl'];
-    const filledFields = fields.filter(field => formData[field] && String(formData[field]).trim() !== '').length;
-    return Math.round((filledFields / fields.length) * 100);
-  };
+    const handleCancelBasic = () => {
+        setIsEditingBasic(false);
+        resetForm();
+    };
 
-  const completionPercentage = calculateProfileCompletion();
+    const handleSaveHours = async () => {
+        try {
+            // Sanitize working hours: convert empty strings to null to avoid backend 500 errors
+            const sanitizedHours = formData.workingHours.map(day => {
+                const formatTime = (t) => {
+                    if (!t || t === '') return null;
+                    // Append seconds if missing (HH:mm -> HH:mm:ss)
+                    if (t.length === 5) return t + ':00';
+                    return t;
+                };
+                return { ...day, open: formatTime(day.open), close: formatTime(day.close) };
+            });
+            await updateProfile({ ...formData, workingHours: sanitizedHours });
+            setIsEditingHours(false);
+        } catch (e) {
+            // Error handled in hook
+        }
+    };
 
-  return (
-    <div>
-      <div className="max-w-4xl mx-auto">
-        {/* PageHeading */}
-        <div className="flex flex-wrap justify-between items-center gap-3 mb-8">
-          <div className="flex min-w-72 flex-col gap-2">
-            <p className="text-[#111418] dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">
-              {completionPercentage < 100 ? 'Set Up Your Profile' : 'Your Profile'}
-            </p>
-            <p className="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal">
-              {completionPercentage < 100 ? 'Complete your profile to start getting booked by customers.' : 'Your profile is complete and visible to customers.'}
-            </p>
-          </div>
-        </div>
-        {/* ProgressBar */}
-        {completionPercentage < 100 && (
-          <div className="flex flex-col gap-3 p-6 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 mb-8">
-            <div className="flex gap-6 justify-between items-center">
-              <p className="text-[#111418] dark:text-white text-base font-medium leading-normal">Profile Completion</p>
-              <p className="text-primary text-sm font-bold leading-normal">{completionPercentage}%</p>
+    const handleCancelHours = () => {
+        setIsEditingHours(false);
+        resetForm();
+    };
+
+    const calculateCompletion = () => {
+        if (!profile) return 0;
+        const fields = ['fullName', 'businessName', 'phone', 'email', 'category', 'serviceArea', 'about', 'profileImageUrl', 'bio'];
+        let filled = 0;
+        fields.forEach(f => {
+            if (profile[f] && String(profile[f]).trim() !== '') filled++;
+        });
+        return Math.round((filled / fields.length) * 100);
+    };
+
+    if (loading) return <div className="p-8 text-center">Loading profile...</div>;
+    if (error) return <div className="p-8 text-center text-red-500">Error loading profile.</div>;
+
+    const completion = calculateCompletion();
+
+    return (
+        <div className="flex flex-col gap-8 max-w-4xl mx-auto pb-10">
+            {/* Header & Profile Picture */}
+            <div className="flex items-center gap-6">
+                <img
+                    src={profile.profileImageUrl || "https://via.placeholder.com/150"}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg bg-gray-200"
+                />
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{profile.fullName || 'Service Provider'}</h1>
+                    <p className="text-gray-500 dark:text-gray-400">{profile.businessName}</p>
+                </div>
             </div>
-            <div className="w-full rounded-full bg-gray-200 dark:bg-gray-700 h-2"><div className="h-2 rounded-full bg-primary" style={{ width: `${completionPercentage}%` }}></div></div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">You're almost there! Complete the final steps to reach 100%.</p>
-          </div>
-        )}
-        {/* Profile Details Section */}
-        <div className="flex flex-col gap-6">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl">
-            <h2 className="text-[#111418] dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-6 pb-3 pt-5 border-b border-gray-200 dark:border-gray-800">Profile Details</h2>
-            <form className="p-6 space-y-6" onSubmit={handleSaveChanges}>
-              <div className="flex items-center gap-6">
-                <img className="size-24 rounded-full object-cover" data-alt="Current user avatar" src={formData.avatarUrl} />
-                <div className="flex flex-col gap-2">
-                  <label className="cursor-pointer text-sm font-medium bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90" htmlFor="file-upload">Upload New Picture</label>
-                  <input className="sr-only" id="file-upload" name="file-upload" type="file" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 10MB.</p>
+
+            {/* Progress Bar */}
+            <div>
+                <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile Completion</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{completion}%</span>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="business-name">Business Name</label>
-                  <input className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="business-name" name="businessName" type="text" value={formData.businessName} onChange={handleChange} />
+                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div className="bg-primary h-2.5 rounded-full transition-all duration-500" style={{ width: `${completion}%` }}></div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="personal-name">Personal Name</label>
-                  <input className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="personal-name" name="personalName" type="text" value={formData.personalName} onChange={handleChange} />
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Basic Information</h2>
+                    {!isEditingBasic ? (
+                        <button onClick={() => setIsEditingBasic(true)} className="text-sm font-medium text-primary hover:underline">Edit</button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <button onClick={handleCancelBasic} className="text-sm font-medium text-gray-500 hover:text-gray-700">Cancel</button>
+                            <button onClick={handleSaveBasic} className="text-sm font-medium text-primary hover:text-primary/80">Save</button>
+                        </div>
+                    )}
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="email">Email Address</label>
-                  <input className={`block w-full rounded-lg shadow-sm sm:text-sm ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-gray-700 focus:border-primary focus:ring-primary'} dark:bg-gray-800 dark:text-white`} id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
-                  {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+                        <input
+                            type="text"
+                            name="fullName"
+                            value={formData.fullName || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Business Name</label>
+                        <input
+                            type="text"
+                            name="businessName"
+                            value={formData.businessName || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+                        <input
+                            type="text"
+                            name="phone"
+                            value={formData.phone || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <input
+                            type="email"
+                            name="email"
+                            value={formData.email || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                        <input
+                            type="text"
+                            name="category"
+                            value={formData.category || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Service Area</label>
+                        <input
+                            type="text"
+                            name="serviceArea"
+                            value={formData.serviceArea || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tagline / Bio</label>
+                        <input
+                            type="text"
+                            name="bio"
+                            value={formData.bio || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">About</label>
+                        <textarea
+                            name="about"
+                            rows="3"
+                            value={formData.about || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                    </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="phone">Phone Number</label>
-                  <input className={`block w-full rounded-lg shadow-sm sm:text-sm ${errors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-gray-700 focus:border-primary focus:ring-primary'} dark:bg-gray-800 dark:text-white`} id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
-                  {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Working Hours</h2>
+                    {!isEditingHours ? (
+                        <button onClick={() => setIsEditingHours(true)} className="text-sm font-medium text-primary hover:underline">Edit</button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <button onClick={handleCancelHours} className="text-sm font-medium text-gray-500 hover:text-gray-700">Cancel</button>
+                            <button onClick={handleSaveHours} className="text-sm font-medium text-primary hover:text-primary/80">Save</button>
+                        </div>
+                    )}
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="service-category">Service Category</label>
-                  <select className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="service-category" name="serviceCategory" value={formData.serviceCategory} onChange={handleChange}>
-                    <option>Plumbing</option>
-                    <option>Electrician</option>
-                    <option>Landscaping</option>
-                  </select>
+                <div className="flex flex-col gap-3">
+                    {formData.workingHours && formData.workingHours.map((day, index) => (
+                        <div key={day.day} className="flex items-center gap-4">
+                            <div className="w-24 font-medium text-gray-700 dark:text-gray-300">{day.day}</div>
+                            <div className="flex items-center gap-2 flex-1">
+                                <input
+                                    type="time"
+                                    value={day.open || ''}
+                                    onChange={(e) => handleWorkingHoursChange(index, 'open', e.target.value)}
+                                    disabled={!isEditingHours || day.closed}
+                                    className="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                                />
+                                <span className="text-gray-500">-</span>
+                                <input
+                                    type="time"
+                                    value={day.close || ''}
+                                    onChange={(e) => handleWorkingHoursChange(index, 'close', e.target.value)}
+                                    disabled={!isEditingHours || day.closed}
+                                    className="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id={`closed-${index}`}
+                                    checked={day.closed || false}
+                                    onChange={(e) => handleWorkingHoursChange(index, 'closed', e.target.checked)}
+                                    disabled={!isEditingHours}
+                                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <label htmlFor={`closed-${index}`} className="text-sm text-gray-600 dark:text-gray-400">Closed</label>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="pincode">Pincode</label>
-                  <input className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="pincode" name="pincode" type="text" value={formData.pincode} onChange={handleChange} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="service-area">Service Area / Location</label>
-                <input className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="service-area" name="serviceArea" type="text" value={formData.serviceArea} onChange={handleChange} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="tagline">Short Bio / Tagline</label>
-                <input className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="tagline" name="tagline" type="text" value={formData.tagline} onChange={handleChange} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="about">About Me/Us Section</label>
-                <textarea className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm" id="about" name="about" rows="4" value={formData.about} onChange={handleChange}></textarea>
-              </div>
-              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-800 flex justify-end -mx-6 -mb-6 rounded-b-xl">
-                <button type="submit" className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-6 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em]">
-                  <span className="truncate">Save Changes</span>
-                </button>
-              </div>
-            </form>
-          </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default ProfileDetailPage;

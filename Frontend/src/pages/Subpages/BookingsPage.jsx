@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
-import { useRecoilValue, useRecoilState, useSetRecoilState } from 'recoil';
-import { filteredBookingsSelector } from '../../state/selectors';
-import { statusFilterState, bookingsState } from '../../state/atoms';
+import { useRecoilState } from 'recoil';
+import { statusFilterState } from '../../state/atoms';
 import CustomDateFilter from '../../components/CustomDateFilter';
-import { useUpdateBooking } from '../../hooks/useBookings';
+import { usePaginatedBookings } from '../../hooks/useBookings';
+import { updateBookingStatusAPI } from '../../api/BookingService';
+import Pagination from '../../components/Pagination';
 
 const BookingsPage = () => {
     const [statusFilter, setStatusFilter] = useRecoilState(statusFilterState);
-    const filteredBookings = useRecoilValue(filteredBookingsSelector);
+    const { loading, error, bookingsData, fetchBookings } = usePaginatedBookings();
     const [editingAmountId, setEditingAmountId] = useState(null);
     const [amountValue, setAmountValue] = useState('');
-    const updateBooking = useUpdateBooking();
+
+    const handleUpdateAndRefresh = async (bookingId, newStatus) => {
+        await updateBookingStatusAPI(bookingId, { status: newStatus });
+        fetchBookings(bookingsData.currentPage ?? 0); // Refresh the current page
+    };
 
     const handleSaveAmount = (bookingId) => {
         const newAmount = parseFloat(amountValue);
         if (isNaN(newAmount)) return; // Or show an error
-        updateBooking(bookingId, { amount: newAmount, providerChanges: true });
+        // updateBooking(bookingId, { amount: newAmount, providerChanges: true });
+        // Note: Amount update API is not yet available in backend.
         setEditingAmountId(null);
         setAmountValue('');
     };
@@ -28,24 +34,20 @@ const BookingsPage = () => {
         { key: 'cancelled', label: 'Cancelled' },
     ];
 
-    const formatDate = (dateString) => {
-        const bookingDate = new Date(dateString);
-        const currentYear = new Date().getFullYear();
-        const bookingYear = bookingDate.getFullYear();
-
-        const options = {
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-
-        if (bookingYear !== currentYear) {
-            options.year = 'numeric';
+    const formatDate = (dateString, timeString) => {
+        const date = new Date(dateString);
+        if (timeString) {
+            const [hours, minutes] = timeString.split(':');
+            date.setHours(hours, minutes);
         }
-
-        return bookingDate.toLocaleDateString('en-US', options);
+        return date.toLocaleDateString('en-US', {
+            month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
     };
+
+    // Render loading or error states
+    if (loading && !(bookingsData.content && bookingsData.content.length > 0)) return <div className="p-8 text-center">Loading bookings...</div>;
+    if (error) return <div className="p-8 text-center text-red-500">Error loading bookings.</div>;
 
     return (
         <div className="flex flex-col gap-8">
@@ -76,80 +78,89 @@ const BookingsPage = () => {
             </div>
 
             {/* Bookings Table */}
-            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Service</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date & Time</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {filteredBookings.map((booking) => (
-                            <tr
-                                key={booking.id}   className={ (booking.status === 'pending' || booking.status === 'confirmed') && new Date(booking.datetime) < new Date() ? 'bg-yellow-50 dark:bg-yellow-900/20' : '' }
-                            >
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div>
-                                        <div className="font-bold text-text-light dark:text-text-dark">{booking.customer}</div>
-                                        <div className="text-xs text-gray-500">{booking.phone}</div>
-                                        <div className="text-xs text-gray-500">{booking.address}</div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">{booking.service}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-secondary">
-                                    {editingAmountId === booking.id ? ( // In edit mode
-                                        <div className="flex items-center gap-2">
-                                            <input type="number" placeholder="Amount" defaultValue={booking.amount || ''} onChange={(e) => setAmountValue(e.target.value)} className="w-24 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm sm:text-xs" />
-                                            <button onClick={() => handleSaveAmount(booking.id)} className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200">Save</button>
-                                            <button onClick={() => setEditingAmountId(null)} className="text-xs text-gray-500 hover:underline">Cancel</button>
-                                        </div>
-                                    ) : ( // Not in edit mode
-                                        <div onClick={() => { if (booking.status === 'pending') { setEditingAmountId(booking.id); setAmountValue(booking.amount || ''); } }} className={booking.status === 'pending' ? 'cursor-pointer p-2 -m-2' : 'p-2 -m-2'}>
-                                            {booking.amount ? `₹${booking.amount.toLocaleString('en-IN')}` : (
-                                                booking.status === 'pending' ? <span className="text-gray-400 font-normal">Add Amount</span> : '-'
-                                            )}
-                                        </div>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(booking.datetime)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : // New
-                                                booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' : // Pending Completion
-                                                    'bg-red-100 text-red-800' // Cancelled or Declined
-                                        }`}>
-                                        {booking.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    {booking.status === 'pending' && (
-                                        <div className="flex items-center gap-2">
-                                            {booking.amount && editingAmountId !== booking.id && !booking.providerChanges ? (
-                                                <button onClick={() => updateBooking(booking.id, { status: 'confirmed' })} className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 hover:bg-green-200">Accept</button>
-                                            ) : null}
-                                            <button onClick={() => updateBooking(booking.id, { status: 'declined' })} className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 hover:bg-red-200">Decline</button>
-                                        </div>
-                                    )}
-                                    {booking.status === 'confirmed' && (
-                                        <div className="flex items-center gap-4">
-                                            <button onClick={() => updateBooking(booking.id, { status: 'completed' })} className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200">
-                                                Complete
-                                            </button>
-                                            <button onClick={() => updateBooking(booking.id, { status: 'cancelled' })} className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200">
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    )}
-                                </td>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-800">
+                            <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Service</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date & Time</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {bookingsData.content.map((booking) => (
+                                <tr
+                                    key={booking.bookingId} className={(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && new Date(booking.scheduledDate) < new Date() ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}
+                                >
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div>
+                                            <div className="font-bold text-text-light dark:text-text-dark">{booking.customerName}</div>
+                                            <div className="text-xs text-gray-500">{booking.customerContactPhone || 'Hidden'}</div>
+                                            <div className="text-xs text-gray-500">{booking.jobLocationAddress || 'Hidden'}</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">{booking.serviceTitle}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-secondary">
+                                        {editingAmountId === booking.bookingId ? ( // In edit mode
+                                            <div className="flex items-center gap-2">
+                                                <input type="number" placeholder="Amount" defaultValue={booking.agreedPrice || ''} onChange={(e) => setAmountValue(e.target.value)} className="w-24 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm sm:text-xs" />
+                                                <button onClick={() => handleSaveAmount(booking.bookingId)} className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200">Save</button>
+                                                <button onClick={() => setEditingAmountId(null)} className="text-xs text-gray-500 hover:underline">Cancel</button>
+                                            </div>
+                                        ) : ( // Not in edit mode
+                                            <div onClick={() => { if (booking.status === 'PENDING') { setEditingAmountId(booking.bookingId); setAmountValue(booking.agreedPrice || ''); } }} className={booking.status === 'PENDING' ? 'cursor-pointer p-2 -m-2' : 'p-2 -m-2'}>
+                                                {booking.agreedPrice ? `₹${booking.agreedPrice.toLocaleString('en-IN')}` : (
+                                                    booking.status === 'PENDING' ? <span className="text-gray-400 font-normal">Add Amount</span> : '-'
+                                                )}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(booking.scheduledDate, booking.scheduledTime)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${booking.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                                booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                                    booking.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                                                        'bg-red-100 text-red-800' // Cancelled or Declined
+                                            }`}>
+                                            {booking.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        {booking.status === 'PENDING' && (
+                                            <div className="flex items-center gap-2">
+                                                {booking.agreedPrice && editingAmountId !== booking.bookingId ? (
+                                                    <button onClick={() => handleUpdateAndRefresh(booking.bookingId, 'CONFIRMED')} className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 hover:bg-green-200">Accept</button>
+                                                ) : null}
+                                                <button onClick={() => handleUpdateAndRefresh(booking.bookingId, 'REJECTED')} className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 hover:bg-red-200">Decline</button>
+                                            </div>
+                                        )}
+                                        {booking.status === 'CONFIRMED' && (
+                                            <div className="flex items-center gap-4">
+                                                <button onClick={() => handleUpdateAndRefresh(booking.bookingId, 'COMPLETED')} className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200">
+                                                    Complete
+                                                </button>
+                                                <button onClick={() => handleUpdateAndRefresh(booking.bookingId, 'CANCELLED')} className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {/* Pagination */}
+                <Pagination
+                    currentPage={bookingsData.currentPage ?? 0}
+                    totalPages={bookingsData.totalPages}
+                    totalElements={bookingsData.totalElements}
+                    onPageChange={fetchBookings}
+                />
             </div>
         </div>
     );

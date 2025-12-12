@@ -1,136 +1,239 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useServices } from '../../hooks/useServices';
-import { useProfile } from '../../hooks/useProfile';
-
-const ServiceCard = ({ service, onDelete, onUpdate }) => (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 flex flex-col justify-between">
-        <div>
-            <div className="flex justify-between items-start">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{service.name}</h3>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${service.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {service.active ? 'Active' : 'Inactive'}
-                </span>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{service.category}</p>
-            <p className="text-2xl font-bold text-secondary mt-4">₹{service.price.toLocaleString('en-IN')}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{service.description}</p>
-        </div>
-        <div className="flex justify-between items-center mt-4">
-            <button onClick={() => onUpdate(service.id, { active: !service.active })} className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${service.active ? 'bg-primary' : 'bg-gray-200'}`}>
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${service.active ? 'translate-x-2.5' : 'translate-x-0'}`} />
-            </button>
-            <div className="flex gap-2">
-                <button onClick={() => alert('Edit not implemented yet!')} className="text-xs font-medium text-blue-600 hover:underline">Edit</button>
-                <button onClick={() => onDelete(service.id)} className="text-xs font-medium text-red-600 hover:underline">Delete</button>
-            </div>
-        </div>
-    </div>
-);
-
-const AddServiceCard = ({ onSave, onCancel, serviceCategory }) => {
-    const [formData, setFormData] = useState({ name: '', category: serviceCategory || '', price: '', description: '' });
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleSave = () => {
-        if (!formData.name || !formData.price) {
-            alert('Service Name and Price are required.');
-            return;
-        }
-        onSave({ ...formData, price: parseFloat(formData.price) });
-    };
-
-    return (
-        <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-6 flex flex-col gap-4">
-            <input name="name" value={formData.name} onChange={handleChange} placeholder="Service Name" className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm sm:text-sm" />
-            <input name="category" value={formData.category} readOnly disabled placeholder="Service Category" className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm sm:text-sm disabled:opacity-70" />
-            <input name="price" value={formData.price} onChange={handleChange} type="number" placeholder="Price (₹)" className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm sm:text-sm" />
-            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Service Description" rows="3" className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm sm:text-sm"></textarea>
-            <div className="flex justify-end gap-2 mt-2">
-                <button onClick={onCancel} className="px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">Cancel</button>
-                <button onClick={handleSave} className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90">Save Service</button>
-            </div>
-        </div>
-    );
-};
 
 const MyServicesPage = () => {
-    const { services, loadServices, addService, deleteService, updateService } = useServices();
-    const { profile, loadProfile, updateProfile } = useProfile();
-    const [isAdding, setIsAdding] = useState(false);
+    const { loading, error, services, updateService, createService, deleteService } = useServices();
     const location = useLocation();
+    const [editingId, setEditingId] = useState(null);
+    const [editForm, setEditForm] = useState({});
+    const [isCreating, setIsCreating] = useState(false);
+    const [newServiceForm, setNewServiceForm] = useState({
+        name: '',
+        description: '',
+        price: '',
+        active: true
+    });
 
     useEffect(() => {
-        // Load both services and profile data
-        loadServices();
-        if (!profile.businessName) { // Only load profile if it's not already there
-            loadProfile();
+        const searchParams = new URLSearchParams(location.search);
+        if (location.state?.openAddService || searchParams.get('action') === 'create') {
+            setIsCreating(true);
         }
-    }, [loadServices, loadProfile, profile.businessName]);
+    }, [location]);
 
-    useEffect(() => {
-        // Check for state passed from the "Add New Service" button
-        if (location.state?.addService) {
-            setIsAdding(true);
-        }
-    }, [location.state]);
-
-    const handleSaveNewService = async (serviceData) => {
-        await addService(serviceData);
-        setIsAdding(false);
+    const handleEditClick = (service) => {
+        setEditingId(service.id);
+        setEditForm(service);
     };
 
-    const handleWorkingHoursChange = (index, field, value) => {
-        const newWorkingHours = [...profile.workingHours];
-        newWorkingHours[index] = { ...newWorkingHours[index], [field]: value };
-        updateProfile({ ...profile, workingHours: newWorkingHours });
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditForm({});
     };
+
+    const handleSave = async () => {
+        const originalService = services.find(s => s.id === editingId);
+        const hasChanged =
+            originalService.name !== editForm.name ||
+            originalService.description !== editForm.description ||
+            originalService.price != editForm.price ||
+            originalService.active !== editForm.active;
+
+        if (!hasChanged) {
+            setEditingId(null);
+            return;
+        }
+
+        try {
+            await updateService(editingId, editForm);
+            setEditingId(null);
+        } catch (e) {
+            console.error("Failed to save service", e);
+            // Optionally handle error in UI
+        }
+    };
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setEditForm(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleCreateClick = () => {
+        setIsCreating(true);
+        setNewServiceForm({ name: '', description: '', price: '', active: true });
+    };
+
+    const handleCreateSave = async () => {
+        if (!newServiceForm.name || !newServiceForm.price) return; // Basic validation
+        try {
+            await createService(newServiceForm);
+            setIsCreating(false);
+        } catch (e) {
+            console.error("Failed to create service", e);
+        }
+    };
+
+    const handleNewServiceChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setNewServiceForm(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleDelete = async (serviceId) => {
+        if (window.confirm("Are you sure you want to delete this service? This action cannot be undone.")) {
+            try {
+                await deleteService(serviceId);
+            } catch (e) {
+                // Error is logged in the hook
+            }
+        }
+    };
+
+    if (loading) return <div className="p-8 text-center">Loading services...</div>;
+    if (error) return <div className="p-8 text-center text-red-500">Error loading services.</div>;
 
     return (
-        <div className="flex flex-col gap-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Services</h1>
-            {/* Working Hours Section */}
-            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl">
-                <h2 className="text-[#111418] dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-6 pb-3 pt-5 border-b border-gray-200 dark:border-gray-800">Working Hours</h2>
-                <div className="p-4 divide-y divide-gray-200 dark:divide-gray-800">
-                    {profile.workingHours?.map((hour, index) => (
-                        <div key={index} className="flex items-center justify-between py-3">
-                            <div className="flex flex-col">
-                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{hour.day}</p>
-                                {!hour.enabled && <p className="text-xs text-gray-500">Closed</p>}
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className={`flex items-center gap-2 transition-opacity duration-300 ${!hour.enabled ? 'opacity-50' : 'opacity-100'}`}>
-                                    <input type="time" value={hour.start} onChange={(e) => handleWorkingHoursChange(index, 'start', e.target.value)} disabled={!hour.enabled} className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 shadow-sm sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed" />
-                                    <span className="text-gray-500">-</span>
-                                    <input type="time" value={hour.end} onChange={(e) => handleWorkingHoursChange(index, 'end', e.target.value)} disabled={!hour.enabled} className="block w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 shadow-sm sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed" />
-                                </div>
-                                <button onClick={() => handleWorkingHoursChange(index, 'enabled', !hour.enabled)} className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${hour.enabled ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}`}>
-                                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${hour.enabled ? 'translate-x-2.5' : 'translate-x-0'}`} />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+        <div className="flex flex-col gap-6">
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Services</h1>
+                <button onClick={handleCreateClick} className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90">
+                    Add New Service
+                </button>
             </div>
 
-            <div className="flex justify-between items-center">
-                <h2 className="text-[#111418] dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">Your Services</h2>
-                {!isAdding && (
-                    <button onClick={() => setIsAdding(true)} className="flex items-center justify-center h-10 px-4 rounded-lg bg-primary text-white text-sm font-bold">
-                        Add Service
-                    </button>
-                )}
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {isCreating && (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden border-l-4 border-l-primary">
+                        <div className="p-6 flex flex-col gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Service Name</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={newServiceForm.name}
+                                    onChange={handleNewServiceChange}
+                                    placeholder="e.g. AC Repair"
+                                    className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                                <textarea
+                                    name="description"
+                                    value={newServiceForm.description}
+                                    onChange={handleNewServiceChange}
+                                    rows="3"
+                                    placeholder="Describe the service..."
+                                    className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price (₹)</label>
+                                <input
+                                    type="number"
+                                    name="price"
+                                    value={newServiceForm.price}
+                                    onChange={handleNewServiceChange}
+                                    className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="active"
+                                    id="new-active"
+                                    checked={newServiceForm.active}
+                                    onChange={handleNewServiceChange}
+                                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <label htmlFor="new-active" className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                                <button onClick={handleCreateSave} className="px-3 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90">Create</button>
+                                <button onClick={() => setIsCreating(false)} className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-600">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {services.map(service => (
-                    <ServiceCard key={service.id} service={service} onDelete={deleteService} onUpdate={updateService} />
+                    <div key={service.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                        <div className="p-6 flex flex-col gap-4">
+                            {editingId === service.id ? (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Service Name</label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={editForm.name || ''}
+                                            onChange={handleChange}
+                                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                                        <textarea
+                                            name="description"
+                                            value={editForm.description || ''}
+                                            onChange={handleChange}
+                                            rows="3"
+                                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price (₹)</label>
+                                        <input
+                                            type="number"
+                                            name="price"
+                                            value={editForm.price || ''}
+                                            onChange={handleChange}
+                                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            name="active"
+                                            id={`active-${service.id}`}
+                                            checked={editForm.active || false}
+                                            onChange={handleChange}
+                                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <label htmlFor={`active-${service.id}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
+                                    </div>
+                                    <div className="flex gap-2 mt-2">
+                                        <button onClick={handleSave} className="px-3 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90">Save</button>
+                                        <button onClick={handleCancelEdit} className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-600">Cancel</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{service.name}</h3>
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${service.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                            {service.active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3">{service.description}</p>
+                                    <div className="mt-auto flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">
+                                        <span className="text-lg font-bold text-secondary">₹{service.price}</span>
+                                        <div className="flex gap-3">
+                                            <button onClick={() => handleEditClick(service)} className="text-sm font-medium text-primary hover:text-primary/80">Edit</button>
+                                            <button onClick={() => handleDelete(service.id)} className="text-sm font-medium text-red-600 hover:text-red-800">Delete</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
                 ))}
-                {isAdding && <AddServiceCard serviceCategory={profile.serviceCategory} onSave={handleSaveNewService} onCancel={() => setIsAdding(false)} />}
             </div>
         </div>
     );

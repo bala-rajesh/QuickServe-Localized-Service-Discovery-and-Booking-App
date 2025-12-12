@@ -1,164 +1,99 @@
 import React from 'react';
-import { useRecoilValue, useRecoilState } from 'recoil';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { earningsPageStatsSelector, filteredEarningsChartSelector } from '../../state/selectors';
+import { useRecoilState } from 'recoil';
+import EarningsChart from '../../components/EarningsChart';
+import { useEarnings } from '../../hooks/useBookings';
 import { earningsFilterState, earningsDateContextState } from '../../state/atoms';
 
-const StatCard = ({ title, value, isCurrency = false }) => (
-    <div className="flex flex-col gap-2 rounded-lg bg-card-light dark:bg-card-dark p-6 border border-border-light/20 dark:border-border-dark">
-        <p className="text-base font-medium">{title}</p>
-        <p className="tracking-light text-3xl font-bold text-secondary">
-            {isCurrency ? `₹${value.toLocaleString('en-IN')}` : value}
-        </p>
-    </div>
-);
-
 const EarningsPage = () => {
-    const stats = useRecoilValue(earningsPageStatsSelector);
-    const chartData = useRecoilValue(filteredEarningsChartSelector);
     const [filter, setFilter] = useRecoilState(earningsFilterState);
-    const [dateContext, setDateContext] = useRecoilState(earningsDateContextState);
+    const [date, setDate] = useRecoilState(earningsDateContextState);
 
-    // Calculate the maximum earning from the currently displayed chart data
-    const maxEarningInPeriod = Math.max(0, ...chartData.map(d => d.earnings));
-
-    const getMaxEarningLabel = () => {
-        if (filter === 'day') return 'Peak Day Earning';
-        if (filter === 'week') return 'Peak Week Earning';
-        return 'Peak Month Earning';
-    };
-
-
-    const filters = [
-        { key: 'day', label: 'Day' },
-        { key: 'week', label: 'Week' },
-        { key: 'month', label: 'Month' },
-    ];
+    const { loading, error, data } = useEarnings(filter, date);
 
     const handleFilterChange = (newFilter) => {
         setFilter(newFilter);
-        setDateContext(new Date()); // Reset to current date context when filter changes
+        setDate(new Date()); // Reset to today when changing filter type
     };
 
-    const handlePrevious = () => {
-        const newDate = new Date(dateContext);
-        if (filter === 'day') {
-            newDate.setDate(newDate.getDate() - 7);
-        } else if (filter === 'week') {
-            newDate.setMonth(newDate.getMonth() - 1);
-        } else { // month
-            newDate.setFullYear(newDate.getFullYear() - 1);
-        }
-        setDateContext(newDate);
+    const handlePrev = () => {
+        const newDate = new Date(date);
+        if (filter === 'week') newDate.setDate(date.getDate() - 7);
+        if (filter === 'month') newDate.setMonth(date.getMonth() - 1);
+        if (filter === 'year') newDate.setFullYear(date.getFullYear() - 1);
+        setDate(newDate);
     };
 
     const handleNext = () => {
-        const newDate = new Date(dateContext);
-        if (filter === 'day') {
-            newDate.setDate(newDate.getDate() + 7);
-        } else if (filter === 'week') {
-            newDate.setMonth(newDate.getMonth() + 1);
-        } else { // month
-            newDate.setFullYear(newDate.getFullYear() + 1);
-        }
-        setDateContext(newDate);
+        const newDate = new Date(date);
+        if (filter === 'week') newDate.setDate(date.getDate() + 7);
+        if (filter === 'month') newDate.setMonth(date.getMonth() + 1);
+        if (filter === 'year') newDate.setFullYear(date.getFullYear() + 1);
+        setDate(newDate);
     };
 
-    const isNextDisabled = () => {
-        const now = new Date();
-        const nextContext = new Date(dateContext);
-
-        if (filter === 'day') {
-            // Disable if the start of the next week is after today
-            const startOfThisWeek = new Date(dateContext);
-            startOfThisWeek.setDate(dateContext.getDate() - dateContext.getDay());
-            return startOfThisWeek > now;
-        } else if (filter === 'week') {
-            // Disable if the next month is after the current month
-            const nextMonth = new Date(dateContext.getFullYear(), dateContext.getMonth() + 1, 1);
-            return nextMonth > now;
-        } else { // month
-            // Disable if the next year is after the current year
-            const nextYear = dateContext.getFullYear() + 1;
-            return nextYear > now.getFullYear();
+    const getDateLabel = () => {
+        if (filter === 'week') {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+            const start = new Date(d.setDate(diff));
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
         }
+        if (filter === 'month') return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        if (filter === 'year') return date.getFullYear().toString();
     };
 
-    const getChartTitle = () => {
-        if (filter === 'day') {
-            const date = dateContext;
-            const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-            const weekOfMonth = Math.floor((date.getDate() - 1 + startOfMonth.getDay()) / 7) + 1;
-            const monthName = date.toLocaleDateString('en-US', { month: 'long' });
-            return `Week ${weekOfMonth} of ${monthName}`;
-        } else if (filter === 'week') {
-            return dateContext.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-        }
-        return dateContext.getFullYear().toString();
-    };
+    if (loading && !data) return <div className="p-10 text-center">Loading earnings...</div>;
 
     return (
         <div className="flex flex-col gap-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Earnings</h1>
+            {error && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <p className="text-sm text-yellow-700">Unable to load live earnings data. Showing default values.</p>
+                </div>
+            )}
 
-            {/* Stats Section */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Total Revenue" value={stats.totalRevenue} isCurrency />
-                <StatCard title={getMaxEarningLabel()} value={maxEarningInPeriod} isCurrency />
-                <StatCard title="Completed Bookings" value={stats.totalCompletedBookings} />
-                <StatCard title="Avg. Per Booking" value={Math.round(stats.averagePerBooking)} isCurrency />
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Earnings & Analytics</h1>
+                
+                <div className="flex items-center gap-4 bg-white dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                    {['week', 'month', 'year'].map(f => (
+                        <button
+                            key={f}
+                            onClick={() => handleFilterChange(f)}
+                            className={`px-4 py-2 text-sm font-medium rounded-md capitalize ${filter === f ? 'bg-primary text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                        >
+                            {f}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Chart Section */}
-            <div className="flex flex-col">
-                <div className="flex justify-between items-center pb-3">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-xl font-bold">Earnings Breakdown</h2>
-                        <div className="flex items-center gap-2">
-                            <button onClick={handlePrevious} className="text-sm font-medium p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">&lt; Prev</button>
-                            <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 w-32 text-center">{getChartTitle()}</span>
-                            <button onClick={handleNext} disabled={isNextDisabled()} className="text-sm font-medium p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">Next &gt;</button>
-                        </div>
-                    </div>
-                    <div className="inline-flex rounded-lg shadow-sm">
-                        {filters.map((f) => (
-                            <button
-                                key={f.key}
-                                onClick={() => handleFilterChange(f.key)}
-                                className={`px-4 py-2 text-sm font-medium capitalize border border-gray-200 dark:border-gray-700 ${filter === f.key
-                                        ? 'bg-primary text-white'
-                                        : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                    } first:rounded-l-lg last:rounded-r-lg`}
-                            >
-                                {f.label}
-                            </button>
-                        ))}
-                    </div>
+            <div className="flex items-center justify-center gap-4 py-2">
+                <button onClick={handlePrev} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">&lt;</button>
+                <span className="text-lg font-semibold min-w-[200px] text-center">{getDateLabel()}</span>
+                <button onClick={handleNext} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">&gt;</button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Revenue</p>
+                    <p className="text-3xl font-bold text-secondary mt-2">₹{data?.totalRevenue?.toLocaleString('en-IN') || 0}</p>
                 </div>
-                <div className="rounded-lg border border-border-light/20 dark:border-border-dark bg-card-light dark:bg-card-dark p-6" style={{ width: '100%', height: 400 }}>
-                    <ResponsiveContainer>
-                        <BarChart
-                            className="focus:outline-none"
-                            data={chartData}
-                            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                            <YAxis tickFormatter={(value) => `₹${value / 1000}k`} tick={{ fontSize: 12 }} />
-                            <Tooltip
-                                cursor={{ fill: 'rgba(136, 132, 216, 0.1)' }}
-                                contentStyle={{
-                                    background: 'rgba(255, 255, 255, 0.8)',
-                                    border: '1px solid #ccc',
-                                    backdropFilter: 'blur(5px)',
-                                    borderRadius: '0.5rem',
-                                }}
-                                formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Earnings']}
-                            />
-                            <Bar dataKey="earnings" fill="#8884d8" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Bookings</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{data?.totalCompletedBookings || 0}</p>
                 </div>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Avg. per Booking</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">₹{data?.averagePerBooking?.toFixed(0) || 0}</p>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                <EarningsChart data={data?.chartData} title="Revenue Breakdown" showLink={false} />
             </div>
         </div>
     );
