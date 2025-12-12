@@ -1,51 +1,76 @@
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRecoilState } from 'recoil';
 import { servicesState } from '../state/atoms';
-import { fetchServicesAPI, createServiceAPI, deleteServiceAPI, updateServiceAPI } from '../api/serviceService';
+import { fetchServicesAPI, updateServiceAPI, createServiceAPI, deleteServiceAPI } from '../api/serviceService';
 
 /**
- * A custom hook to manage the provider's services.
+ * Hook to fetch and manage provider services.
  */
 export const useServices = () => {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [services, setServices] = useRecoilState(servicesState);
 
-    const loadServices = useCallback(async () => {
+    const fetchServices = useCallback(async () => {
+        setLoading(true);
         try {
             const data = await fetchServicesAPI();
             setServices(data);
-        } catch (error) {
-            console.error("Failed to load services:", error);
+            setError(null);
+        } catch (err) {
+            console.error("Failed to fetch services:", err);
+            setError(err);
+        } finally {
+            setLoading(false);
         }
     }, [setServices]);
 
-    const addService = useCallback(async (serviceData) => {
+    const updateService = useCallback(async (serviceId, updatedData) => {
+        // Optimistic update
+        const originalServices = services;
+        setServices(prev => prev.map(s => s.id === serviceId ? { ...s, ...updatedData } : s));
+
         try {
-            const newService = await createServiceAPI(serviceData);
-            setServices(prev => [...prev, newService]);
-        } catch (error) {
-            console.error("Failed to add service:", error);
+            await updateServiceAPI(serviceId, updatedData);
+        } catch (err) {
+            console.error("Failed to update service:", err);
+            setServices(originalServices); // Rollback
+            throw err;
+        }
+    }, [services, setServices]);
+
+    const createService = useCallback(async (newServiceData) => {
+        setLoading(true);
+        try {
+            const data = await createServiceAPI(newServiceData);
+            setServices(prev => [...prev, data]);
+            setError(null);
+            return data;
+        } catch (err) {
+            console.error("Failed to create service:", err);
+            setError(err);
+            throw err;
+        } finally {
+            setLoading(false);
         }
     }, [setServices]);
 
     const deleteService = useCallback(async (serviceId) => {
+        const originalServices = services;
+        setServices(prev => prev.filter(s => s.id !== serviceId));
+
         try {
             await deleteServiceAPI(serviceId);
-            setServices(prev => prev.filter(s => s.id !== serviceId));
-        } catch (error) {
-            console.error("Failed to delete service:", error);
+        } catch (err) {
+            console.error("Failed to delete service:", err);
+            setServices(originalServices); // Rollback
+            throw err;
         }
-    }, [setServices]);
+    }, [services, setServices]);
 
-    const updateService = useCallback(async (serviceId, dataToUpdate) => {
-        try {
-            const updatedService = await updateServiceAPI(serviceId, dataToUpdate);
-            setServices(prev =>
-                prev.map(s => s.id === serviceId ? updatedService : s)
-            );
-        } catch (error) {
-            console.error("Failed to update service:", error);
-        }
-    }, [setServices]);
+    useEffect(() => {
+        fetchServices();
+    }, [fetchServices]);
 
-    return { services, loadServices, addService, deleteService, updateService };
+    return { loading, error, services, fetchServices, updateService, createService, deleteService };
 };

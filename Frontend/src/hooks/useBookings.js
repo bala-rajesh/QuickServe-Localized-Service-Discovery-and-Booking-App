@@ -1,48 +1,137 @@
-import { useCallback } from 'react';
-import { useSetRecoilState } from 'recoil';
-import { bookingsState, earningsState, fetchAllData } from '../state/atoms'; // Use mock fetch
+import { useCallback, useState, useEffect } from 'react';
+import { useSetRecoilState, useRecoilState, useRecoilValue } from 'recoil';
+import { dashboardStatsState, dashboardChartsState, dashboardListsState, paginatedBookingsState, statusFilterState, dateFilterState } from '../state/atoms';
+import { fetchDashboardAPI, updateBookingStatusAPI, fetchBookingsAPI, fetchEarningsAPI } from '../api/BookingService';
 
 /**
  * A custom hook that provides a function to load all initial data from the API
- * and populate the Recoil state.
+ * and populate the dashboard-specific Recoil atoms.
  */
 export const useLoadInitialData = () => {
-    const setBookings = useSetRecoilState(bookingsState);
-    const setEarnings = useSetRecoilState(earningsState);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const setStats = useSetRecoilState(dashboardStatsState);
+    const setCharts = useSetRecoilState(dashboardChartsState);
+    const setLists = useSetRecoilState(dashboardListsState);
 
-    // useCallback ensures the function reference doesn't change on every render
     const loadData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
         try {
-            const data = await fetchAllData(); // Changed to use the mock data function
-            setBookings(data.bookings);
-            setEarnings(data.earnings);
-        } catch (error) {
-            console.error("Failed to fetch initial data:", error);
-            // You could set a global error state here
+            const data = await fetchDashboardAPI();
+            setStats(data.stats);
+            setCharts(data.charts.thisWeekEarnings);
+            setLists(data.lists);
+        } catch (err) {
+            console.error("Failed to fetch dashboard data:", err);
+            setError(err);
+        } finally {
+            setLoading(false);
         }
-    }, [setBookings, setEarnings]);
+    }, [setStats, setCharts, setLists]);
 
-    return loadData;
+    // This effect runs the loadData function once when the hook is first used.
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // The hook returns the loading and error state, along with a function to manually reload.
+    return { loading, error, reload: loadData };
+};
+
+
+export const useUpdateBooking = () => {
+    const [lists, setLists] = useRecoilState(dashboardListsState);
+
+    const updateBookingStatus = useCallback(async (bookingId, newStatus) => {
+        // Optimistic UI Update: Remove the booking from the list immediately.
+        const originalLists = lists;
+        setLists(prev => ({
+            ...prev,
+            newRequests: prev.newRequests.filter(item => item.bookingId !== bookingId)
+        }));
+
+        try {
+            await updateBookingStatusAPI(bookingId, { status: newStatus });
+        } catch (error) {
+            console.error(`Failed to update booking status for ${bookingId}:`, error);
+            setLists(originalLists); // Rollback on error
+            throw error;
+        }
+    }, [lists, setLists]);
+
+    return updateBookingStatus;
 };
 
 /**
- * A custom hook that provides a function to update a booking.
- * It handles the API call and updates the Recoil state on success.
- * @returns {Function} A function `updateBooking(bookingId, dataToUpdate)`
+ * Hook to fetch and manage paginated bookings based on filters.
  */
-export const useUpdateBooking = () => {
-    const setBookings = useSetRecoilState(bookingsState);
+export const usePaginatedBookings = () => {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const statusFilter = useRecoilValue(statusFilterState);
+    const dateFilter = useRecoilValue(dateFilterState);
+    const [bookingsData, setBookingsData] = useRecoilState(paginatedBookingsState);
 
-    const updateBooking = useCallback((bookingId, dataToUpdate) => {
-        // This function now directly updates the Recoil state for the mock data.
-        setBookings(prevBookings =>
-            prevBookings.map(booking =>
-                booking.id === bookingId
-                    ? { ...booking, ...dataToUpdate } // Find the booking and merge the updates
-                    : booking
-            )
-        );
-    }, [setBookings]);
+    const fetchBookings = useCallback(async (page = 0) => {
+        try {
+            setLoading(true);
+            // dateFilter in atom is 'all' or array. API expects array or null.
+            const range = Array.isArray(dateFilter) ? dateFilter : null;
+            const data = await fetchBookingsAPI(statusFilter, page, range);
+            setBookingsData({
+                content: data.content,
+                totalPages: data.totalPages,
+                currentPage: data.currentPage ?? data.number ?? data.pageNumber ?? page,
+                totalElements: data.totalElements,
+            });
+            setError(null);
+        } catch (err) {
+            console.error("Failed to fetch bookings:", err);
+            setError(err);
+        } finally {
+            setLoading(false);
+        }
+    }, [statusFilter, dateFilter, setBookingsData]);
 
-    return updateBooking;
+    useEffect(() => {
+        fetchBookings();
+    }, [fetchBookings]);
+
+    return { loading, error, bookingsData, fetchBookings };
+};
+
+/**
+ * Hook to fetch earnings analytics.
+ */
+export const useEarnings = (filter, date) => {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [data, setData] = useState(null);
+
+    useEffect(() => {
+        const loadEarnings = async () => {
+            setLoading(true);
+            try {
+                const result = await fetchEarningsAPI(filter, date.toISOString().split('T')[0]);
+                setData(result);
+                setError(null);
+            } catch (err) {
+                console.error("Failed to fetch earnings:", err);
+                setError(err);
+                // Set default data on error so UI can render
+                setData({
+                    totalRevenue: 0,
+                    averagePerBooking: 0,
+                    totalCompletedBookings: 0,
+                    chartData: []
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadEarnings();
+    }, [filter, date]);
+
+    return { loading, error, data };
 };
