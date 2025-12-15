@@ -1,19 +1,24 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ServiceProviderPage from './pages/ServiceProviderPage';
 import DashboardPage from './pages/Subpages/DashboardPage';
 import ProfileDetailPage from './pages/Subpages/ProfileDetailPage';
 import BookingsPage from './pages/Subpages/BookingsPage';
 import MyServicesPage from './pages/Subpages/MyServicesPage';
 import EarningsPage from './pages/Subpages/EarningsPage';
-import './index.css';
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import CustomerSignup from "./pages/CustomerSignup";
+import ProviderSignup from "./pages/ProviderSignup";
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="App">
         <Routes>
-          <Route path="/" element={<Navigate to="/service-provider/dashboard" />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup/customer" element={<CustomerSignup />} />
+          <Route path="/signup/provider" element={<ProviderSignup />} />
           <Route path="/service-provider" element={<ServiceProviderPage />}>
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="profile" element={<ProfileDetailPage />} />
@@ -22,7 +27,6 @@ function App() {
             <Route path="earnings" element={<EarningsPage />} />
           </Route>
         </Routes>
-      </div>
     </BrowserRouter>
   );
 }
