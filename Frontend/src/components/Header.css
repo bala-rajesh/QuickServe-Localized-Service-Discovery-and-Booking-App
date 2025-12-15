@@ -1,0 +1,104 @@
+/* ===========================
+   FULL WIDTH HEADER
+   =========================== */
+.qs-header {
+    width: 100vw;                    /* Full screen width */
+    max-width: 100%;                 /* Avoid overflow */
+    height: 70px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 35px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+
+    /* Stick header to full-left & full-right */
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 1000;
+}
+
+/* ===========================
+   LEFT SECTION (Logo + Title)
+   =========================== */
+.qs-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qs-logo {
+    width: 28px;
+    height: 28px;
+}
+
+.qs-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e2b3a;
+    letter-spacing: -0.3px;
+}
+
+/* ===========================
+   NAVIGATION CENTER
+   =========================== */
+.qs-nav {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.qs-nav span {
+    cursor: pointer;
+    transition: color 0.25s ease;
+}
+
+.qs-nav span:hover {
+    color: #0b66e4;
+}
+
+.qs-nav .active {
+    color: #0b66e4;
+    font-weight: 600;
+}
+
+/* ===========================
+   RIGHT SECTION (Button + Profile)
+   =========================== */
+.qs-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.qs-book-btn {
+    background: #1a73e8;
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.25s ease;
+    white-space: nowrap;
+}
+
+.qs-book-btn:hover {
+    background: #0d56c7;
+}
+
+.qs-profile-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+}
