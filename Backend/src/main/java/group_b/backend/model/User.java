@@ -22,6 +22,8 @@ public class User {
     @Column(name = "phone_number")
     private String phone;
 
+    private String address;
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition = "user_role_enum")

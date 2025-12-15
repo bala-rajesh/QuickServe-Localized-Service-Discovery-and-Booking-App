@@ -130,12 +130,12 @@ public class ProviderService {
         // Update User entity fields
         user.setFullName(profileDto.getFullName());
         user.setPhone(profileDto.getPhone());
+        user.setAddress(profileDto.getServiceArea()); // Mapping serviceArea DTO field to User address
 
         // Update ServiceProvider entity fields
         provider.setBusinessName(profileDto.getBusinessName());
         provider.setCategory(profileDto.getCategory());
         provider.setPincode(profileDto.getPincode());
-        provider.setServiceArea(profileDto.getServiceArea());
         provider.setBioShort(profileDto.getBio());
         provider.setAbout(profileDto.getAbout());
         provider.setProfileImageUrl(profileDto.getProfileImageUrl());
@@ -349,7 +349,7 @@ public class ProviderService {
         dto.setBusinessName(provider.getBusinessName());
         dto.setCategory(provider.getCategory());
         dto.setPincode(provider.getPincode());
-        dto.setServiceArea(provider.getServiceArea());
+        dto.setServiceArea(user.getAddress()); // Mapping User address to serviceArea DTO field
         dto.setBio(provider.getBioShort());
         dto.setAbout(provider.getAbout());
         dto.setProfileImageUrl(provider.getProfileImageUrl());

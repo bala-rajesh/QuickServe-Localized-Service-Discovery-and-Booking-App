@@ -28,9 +28,6 @@ public class ServiceProvider {
 
     private String pincode;
 
-    @Column(name = "service_area")
-    private String serviceArea;
-
     @Column(name = "about_text")
     private String about;
 
@@ -94,14 +91,6 @@ public class ServiceProvider {
 
     public void setPincode(String pincode) {
         this.pincode = pincode;
-    }
-
-    public String getServiceArea() {
-        return serviceArea;
-    }
-
-    public void setServiceArea(String serviceArea) {
-        this.serviceArea = serviceArea;
     }
 
     public List<ProviderServiceEntity> getServices() {
