@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
 
 import group_b.backend.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
@@ -46,7 +47,7 @@ public class ProviderService {
     private final ProviderServiceRepository serviceRepository;
     private final ProviderWorkingHoursRepository workingHoursRepository;
 
-    public ProviderDashboardDto getDashboardData(Long providerId) {
+    public ProviderDashboardDto getDashboardData(@NonNull Long providerId) {
         // This ensures the provider exists before we query anything
         ServiceProvider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceProvider not found with id: " + providerId));
@@ -75,7 +76,7 @@ public class ProviderService {
         return dashboardDto;
     }
 
-    public PaginatedResponseDto<BookingDto> getBookings(Long providerId, BookingStatus status, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+    public PaginatedResponseDto<BookingDto> getBookings(@NonNull Long providerId, BookingStatus status, LocalDate startDate, LocalDate endDate, Pageable pageable) {
         Page<Booking> bookingsPage;
 
         // Determine which repository method to call based on provided filters
@@ -102,7 +103,7 @@ public class ProviderService {
     }
 
     @Transactional
-    public BookingDto updateBookingStatus(Long bookingId, BookingStatus newStatus) {
+    public BookingDto updateBookingStatus(@NonNull Long bookingId, BookingStatus newStatus) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
 
@@ -113,14 +114,14 @@ public class ProviderService {
         return toBookingDto(updatedBooking);
     }
 
-    public ProviderProfileDto getProfileDetails(Long providerId) {
+    public ProviderProfileDto getProfileDetails(@NonNull Long providerId) {
         ServiceProvider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceProvider not found with id: " + providerId));
         return mapToProfileDto(provider);
     }
 
     @Transactional
-    public ProviderProfileDto updateProfileDetails(Long providerId, ProviderProfileDto profileDto) {
+    public ProviderProfileDto updateProfileDetails(@NonNull Long providerId, ProviderProfileDto profileDto) {
         ServiceProvider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceProvider not found with id: " + providerId));
 
@@ -140,7 +141,7 @@ public class ProviderService {
         provider.setProfileImageUrl(profileDto.getProfileImageUrl());
         if (profileDto.getWorkingHours() != null) {
             updateProviderWorkingHours(provider, profileDto.getWorkingHours());
-            workingHoursRepository.saveAll(provider.getWorkingHours());
+            workingHoursRepository.saveAll(Objects.requireNonNull(provider.getWorkingHours()));
         }
 
         // Save both entities
@@ -150,14 +151,14 @@ public class ProviderService {
         return mapToProfileDto(updatedProvider);
     }
 
-    public List<ProviderServiceDTO> getAllServices(Long providerId) {
+    public List<ProviderServiceDTO> getAllServices(@NonNull Long providerId) {
         return serviceRepository.findByProviderId(providerId).stream()
                 .map(this::toServiceDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public ProviderServiceDTO updateService(Long providerId, Long serviceId, ProviderServiceDTO updatedData) {
+    public ProviderServiceDTO updateService(@NonNull Long providerId, @NonNull Long serviceId, ProviderServiceDTO updatedData) {
         // Find the service by its ID
         ProviderServiceEntity service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + serviceId));
@@ -178,7 +179,7 @@ public class ProviderService {
     }
 
     @Transactional
-    public ProviderServiceDTO createService(Long providerId, ProviderServiceDTO serviceDto) {
+    public ProviderServiceDTO createService(@NonNull Long providerId, ProviderServiceDTO serviceDto) {
         ServiceProvider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceProvider not found with id: " + providerId));
 
@@ -194,7 +195,7 @@ public class ProviderService {
     }
 
     @Transactional
-    public void deleteService(Long providerId, Long serviceId) {
+    public void deleteService(@NonNull Long providerId, @NonNull Long serviceId) {
         ProviderServiceEntity service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + serviceId));
 
@@ -205,7 +206,7 @@ public class ProviderService {
         serviceRepository.delete(service);
     }
 
-    public EarningsAnalyticsDto getEarningsAnalytics(Long providerId, String filter, LocalDate date) {
+    public EarningsAnalyticsDto getEarningsAnalytics(@NonNull Long providerId, String filter, LocalDate date) {
         LocalDate startDate;
         LocalDate endDate;
         List<EarningsAnalyticsDto.ChartData> chartData = new ArrayList<>();
@@ -286,7 +287,7 @@ public class ProviderService {
         return dto;
     }
 
-    private List<Map<String, Object>> calculateThisWeekEarnings(Long providerId) {
+    private List<Map<String, Object>> calculateThisWeekEarnings(@NonNull Long providerId) {
         LocalDate today = LocalDate.now();
         LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
 
