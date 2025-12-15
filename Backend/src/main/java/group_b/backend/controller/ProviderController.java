@@ -27,13 +27,13 @@ public class ProviderController {
 
     // This is a placeholder for getting the authenticated provider's ID.
     // In a real application, this would come from the security context.
-    private Long getAuthenticatedProviderId() {
+    private long getAuthenticatedProviderId() {
         return 1L;
     }
 
     @GetMapping("/dashboard")
     public ResponseEntity<ProviderDashboardDto> getDashboard() {
-        Long providerId = getAuthenticatedProviderId();
+        long providerId = getAuthenticatedProviderId();
         ProviderDashboardDto dashboardData = providerService.getDashboardData(providerId);
         return ResponseEntity.ok(dashboardData);
     }
@@ -44,14 +44,14 @@ public class ProviderController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             Pageable pageable) {
-        Long providerId = getAuthenticatedProviderId();
+        long providerId = getAuthenticatedProviderId();
         PaginatedResponseDto<BookingDto> bookings = providerService.getBookings(providerId, status, startDate, endDate, pageable);
         return ResponseEntity.ok(bookings);
     }
 
     @PatchMapping("/bookings/{id}/status")
     public ResponseEntity<BookingDto> updateBookingStatus(
-            @PathVariable Long id,
+            @PathVariable long id,
             @RequestBody Map<String, String> payload) {
         BookingStatus newStatus = BookingStatus.valueOf(payload.get("status").toUpperCase());
         BookingDto updatedBooking = providerService.updateBookingStatus(id, newStatus);
@@ -60,44 +60,44 @@ public class ProviderController {
 
     @GetMapping("/profile")
     public ResponseEntity<ProviderProfileDto> getProfile() {
-        Long providerId = getAuthenticatedProviderId();
+        long providerId = getAuthenticatedProviderId();
         ProviderProfileDto profile = providerService.getProfileDetails(providerId);
         return ResponseEntity.ok(profile);
     }
 
     @PutMapping("/profile")
     public ResponseEntity<ProviderProfileDto> updateProfile(@RequestBody ProviderProfileDto profileDto) {
-        Long providerId = getAuthenticatedProviderId();
+        long providerId = getAuthenticatedProviderId();
         ProviderProfileDto updatedProfile = providerService.updateProfileDetails(providerId, profileDto);
         return ResponseEntity.ok(updatedProfile);
     }
 
     @GetMapping("/services")
     public ResponseEntity<List<ProviderServiceDTO>> getServices() {
-        Long providerId = getAuthenticatedProviderId();
+        long providerId = getAuthenticatedProviderId();
         List<ProviderServiceDTO> services = providerService.getAllServices(providerId);
         return ResponseEntity.ok(services);
     }
 
     @PutMapping("/services/{serviceId}")
     public ResponseEntity<ProviderServiceDTO> updateService(
-            @PathVariable Long serviceId,
+            @PathVariable long serviceId,
             @RequestBody ProviderServiceDTO serviceDto) {
-        Long providerId = getAuthenticatedProviderId();
+        long providerId = getAuthenticatedProviderId();
         ProviderServiceDTO updatedService = providerService.updateService(providerId, serviceId, serviceDto);
         return ResponseEntity.ok(updatedService);
     }
 
     @PostMapping("/services")
     public ResponseEntity<ProviderServiceDTO> createService(@RequestBody ProviderServiceDTO serviceDto) {
-        Long providerId = getAuthenticatedProviderId();
+        long providerId = getAuthenticatedProviderId();
         ProviderServiceDTO createdService = providerService.createService(providerId, serviceDto);
         return ResponseEntity.ok(createdService);
     }
 
     @DeleteMapping("/services/{serviceId}")
-    public ResponseEntity<Void> deleteService(@PathVariable Long serviceId) {
-        Long providerId = getAuthenticatedProviderId();
+    public ResponseEntity<Void> deleteService(@PathVariable long serviceId) {
+        long providerId = getAuthenticatedProviderId();
         providerService.deleteService(providerId, serviceId);
         return ResponseEntity.noContent().build();
     }
@@ -106,7 +106,7 @@ public class ProviderController {
     public ResponseEntity<EarningsAnalyticsDto> getEarnings(
             @RequestParam(defaultValue = "week") String filter,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        Long providerId = getAuthenticatedProviderId();
+        long providerId = getAuthenticatedProviderId();
         LocalDate queryDate = date != null ? date : LocalDate.now();
         EarningsAnalyticsDto earnings = providerService.getEarningsAnalytics(providerId, filter, queryDate);
         return ResponseEntity.ok(earnings);

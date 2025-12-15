@@ -13,12 +13,14 @@ import group_b.backend.repository.ServiceProviderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,7 +34,7 @@ public class ProviderSettingsService {
     private final ProviderWorkingHoursRepository workingHoursRepository;
 
     @Transactional
-    public ProviderSettingsDTO getServicesAndSchedule(Long providerId) {
+    public ProviderSettingsDTO getServicesAndSchedule(@NonNull Long providerId) {
         ServiceProvider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceProvider not found with id: " + providerId));
 
@@ -52,7 +54,7 @@ public class ProviderSettingsService {
     }
 
     @Transactional
-    public ProviderServiceDTO addService(Long providerId, ProviderServiceDTO serviceDto) {
+    public ProviderServiceDTO addService(@NonNull Long providerId, ProviderServiceDTO serviceDto) {
         ServiceProvider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceProvider not found with id: " + providerId));
 
@@ -68,7 +70,7 @@ public class ProviderSettingsService {
     }
 
     @Transactional
-    public void updateSchedule(Long providerId, List<WorkingHourDTO> schedule) {
+    public void updateSchedule(@NonNull Long providerId, List<WorkingHourDTO> schedule) {
         Map<String, ProviderWorkingHours> existingHoursMap = workingHoursRepository.findByProviderId(providerId)
                 .stream()
                 .collect(Collectors.toMap(wh -> wh.getDayOfWeek().name(), Function.identity()));
@@ -82,7 +84,7 @@ public class ProviderSettingsService {
             }
         }
 
-        workingHoursRepository.saveAll(existingHoursMap.values());
+        workingHoursRepository.saveAll(Objects.requireNonNull(existingHoursMap.values()));
     }
 
     private List<ProviderWorkingHours> createDefaultWorkingHours(ServiceProvider provider) {
