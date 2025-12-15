@@ -1,0 +1,136 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+
+body { background: #f3f4f6; color: #111827; }
+
+.navbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-inner {
+  width: 100%;
+  max-width: 1120px;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-left { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+
+.logo-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.logo-box img { width: 100%; height: 100%; object-fit: contain; }
+
+.btn-primary {
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover { background: #1d4ed8; }
+
+.page {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 720px;
+  padding: 2rem;
+}
+
+.role-tabs {
+  display: inline-flex;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.role-tab {
+  padding: 0.4rem 1.2rem;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  border: none;
+}
+
+.role-tab.active {
+  background: #2563eb;
+  color: white;
+}
+
+.card-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.card-sub {
+  margin-bottom: 1.5rem;
+  color: #6b7280;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.field { margin-bottom: 1rem; }
+
+.field label {
+  font-size: .85rem;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: .55rem .75rem;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+
+textarea { resize: vertical; min-height: 70px; }
+
+.actions {
+  margin-top: 1.5rem;
+}
+
+.secondary {
+  margin-top: .8rem;
+  color: #6b7280;
+}
+
+.secondary a { color: #2563eb; cursor: pointer; }
+
+@media (max-width: 768px) {
+  .form-grid-2 { grid-template-columns: 1fr; }
+}
