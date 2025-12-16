@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
+import TomTomMap from '../components/TomTomMap';
 
 const ServiceListings = () => {
     const [services, setServices] = useState([]);
@@ -158,16 +159,7 @@ const ServiceListings = () => {
             </div>
             {/* Right Panel: Interactive Map */}
             <div className="lg:col-span-7 xl:col-span-2 h-96 lg:h-auto relative">
-                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://placeholder.pics/svg/300')", filter: "grayscale(50%) contrast(90%)" }}></div>
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    {/* Example Pin */}
-                    <div className="absolute" style={{ top: '35%', left: '40%' }}>
-                        <div className="relative group pointer-events-auto">
-                            <span className="material-symbols-outlined text-4xl text-primary drop-shadow-lg" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
-                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-900 shadow-lg rounded-lg p-2 w-max text-xs font-semibold text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity">Sarah J.</div>
-                        </div>
-                    </div>
-                </div>
+                <TomTomMap />
             </div>
         </div>
     );
