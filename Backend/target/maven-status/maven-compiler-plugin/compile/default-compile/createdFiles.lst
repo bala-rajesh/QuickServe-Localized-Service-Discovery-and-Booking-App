@@ -1,0 +1,17 @@
+com\quickserve\backend\repository\UserRepository.class
+com\quickserve\backend\BackendApplication.class
+com\quickserve\backend\config\SecurityConfig.class
+com\quickserve\backend\controller\BookingController.class
+com\quickserve\backend\payload\JwtResponse.class
+com\quickserve\backend\repository\ServiceRepository.class
+com\quickserve\backend\controller\AuthController.class
+com\quickserve\backend\model\Booking.class
+com\quickserve\backend\controller\UserController.class
+com\quickserve\backend\model\User.class
+com\quickserve\backend\security\AuthTokenFilter.class
+com\quickserve\backend\repository\BookingRepository.class
+com\quickserve\backend\security\UserDetailsServiceImpl.class
+com\quickserve\backend\payload\LoginRequest.class
+com\quickserve\backend\controller\ServiceController.class
+com\quickserve\backend\model\Service.class
+com\quickserve\backend\security\JwtUtils.class
