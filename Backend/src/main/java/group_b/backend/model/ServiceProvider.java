@@ -26,8 +26,6 @@ public class ServiceProvider {
 
     private String category;
 
-    private String pincode;
-
     @Column(name = "about_text")
     private String about;
 
@@ -83,14 +81,6 @@ public class ServiceProvider {
 
     public void setCategory(String category) {
         this.category = category;
-    }
-
-    public String getPincode() {
-        return pincode;
-    }
-
-    public void setPincode(String pincode) {
-        this.pincode = pincode;
     }
 
     public List<ProviderServiceEntity> getServices() {

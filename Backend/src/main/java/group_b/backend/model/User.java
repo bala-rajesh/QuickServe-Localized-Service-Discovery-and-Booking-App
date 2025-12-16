@@ -22,7 +22,11 @@ public class User {
     @Column(name = "phone_number")
     private String phone;
 
+    @Column(name = "address")
     private String address;
+
+    @Column(name = "pincode")
+    private String pincode;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
