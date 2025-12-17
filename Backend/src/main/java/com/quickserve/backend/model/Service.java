@@ -23,4 +23,9 @@ public class Service {
     private String location;
     private double rating;
     private int reviewCount;
+    private double latitude;
+    private double longitude;
+    private String providerName;
+    private String title;
+    private String image;
 }
