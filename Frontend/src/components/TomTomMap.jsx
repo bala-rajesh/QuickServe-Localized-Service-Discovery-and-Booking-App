@@ -7,6 +7,7 @@ const TomTomMap = ({ center = [77.5946, 12.9716], zoom = 14 }) => {
     const [map, setMap] = useState(null);
     const [mapCenter, setMapCenter] = useState(center);
     const markerRef = useRef(null);
+    const apiKey = import.meta.env.VITE_TOMTOM_API_KEY;
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -23,27 +24,33 @@ const TomTomMap = ({ center = [77.5946, 12.9716], zoom = 14 }) => {
     }, []);
 
     useEffect(() => {
+        if (!apiKey) return;
+
         let mapInstance = null;
         if (mapElement.current) {
-            mapInstance = tt.map({
-                key: import.meta.env.VITE_TOMTOM_API_KEY,
-                container: mapElement.current,
-                center: mapCenter,
-                zoom: zoom,
-            });
+            try {
+                mapInstance = tt.map({
+                    key: apiKey,
+                    container: mapElement.current,
+                    center: mapCenter,
+                    zoom: zoom,
+                });
 
-            setMap(mapInstance);
-            mapInstance.addControl(new tt.NavigationControl());
-            mapInstance.addControl(new tt.GeolocateControl({
-                positionOptions: {
-                    enableHighAccuracy: true,
-                },
-                trackUserLocation: true,
-            }));
+                setMap(mapInstance);
+                mapInstance.addControl(new tt.NavigationControl());
+                mapInstance.addControl(new tt.GeolocateControl({
+                    positionOptions: {
+                        enableHighAccuracy: true,
+                    },
+                    trackUserLocation: true,
+                }));
 
-            // Add initial marker
-            const marker = new tt.Marker().setLngLat(mapCenter).addTo(mapInstance);
-            markerRef.current = marker;
+                // Add initial marker
+                const marker = new tt.Marker().setLngLat(mapCenter).addTo(mapInstance);
+                markerRef.current = marker;
+            } catch (error) {
+                console.error("Failed to initialize TomTom map:", error);
+            }
         }
 
         return () => {
@@ -54,7 +61,7 @@ const TomTomMap = ({ center = [77.5946, 12.9716], zoom = 14 }) => {
                 markerRef.current.remove();
             }
         };
-    }, []);
+    }, [apiKey]); // Added apiKey dependency
 
     useEffect(() => {
         if (map) {
@@ -71,6 +78,16 @@ const TomTomMap = ({ center = [77.5946, 12.9716], zoom = 14 }) => {
         }
     }, [mapCenter, zoom, map]);
 
+    if (!apiKey) {
+        return (
+            <div className="w-full h-full rounded-lg shadow-md border border-red-300 bg-red-50 flex items-center justify-center p-4">
+                <div className="text-center text-red-600">
+                    <p className="font-bold">Map unavailable</p>
+                    <p className="text-sm">Missing VITE_TOMTOM_API_KEY in .env file</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
