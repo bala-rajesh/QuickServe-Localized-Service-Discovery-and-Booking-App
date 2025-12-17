@@ -11,6 +11,8 @@ import group_b.backend.service.ProviderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,10 +27,12 @@ public class ProviderController {
 
     private final ProviderService providerService;
 
-    // This is a placeholder for getting the authenticated provider's ID.
-    // In a real application, this would come from the security context.
     private long getAuthenticatedProviderId() {
-        return 1L;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new SecurityException("User is not authenticated");
+        }
+        return providerService.getProviderIdByEmail(authentication.getName());
     }
 
     @GetMapping("/dashboard")

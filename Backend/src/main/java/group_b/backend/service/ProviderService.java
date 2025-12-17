@@ -406,4 +406,12 @@ public class ProviderService {
             entity.setClosed(dto.isClosed());
         }
     }
+
+    public Long getProviderIdByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return providerRepository.findByUser(user)
+                .map(ServiceProvider::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found for user: " + email));
+    }
 }

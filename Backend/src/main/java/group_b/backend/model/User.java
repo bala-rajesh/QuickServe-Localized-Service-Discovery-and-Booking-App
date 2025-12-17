@@ -28,6 +28,9 @@ public class User {
     @Column(name = "pincode")
     private String pincode;
 
+    @Column(name = "password_hash")
+    private String password;
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition = "user_role_enum")
