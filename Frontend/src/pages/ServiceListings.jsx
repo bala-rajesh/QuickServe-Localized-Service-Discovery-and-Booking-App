@@ -9,46 +9,12 @@ const ServiceListings = () => {
     useEffect(() => {
         const fetchServices = async () => {
             try {
-                // In a real scenario, we would fetch from the API
-                // const data = await api.services.getAll();
-                // setServices(data);
-
-                // For demo purposes, we'll use the mock data if API fails or is empty
-                // simulating API call
-                setTimeout(() => {
-                    setServices([
-                        {
-                            id: '1',
-                            providerName: 'Sarah Jenkins',
-                            title: 'Master Plumber',
-                            rating: 4.9,
-                            reviewCount: 124,
-                            description: 'Fast, reliable, and affordable plumbing services for your home or business.',
-                            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBf0YhNwRh1vq5HgjUQLYSTz4uNu_nlSYwdY8mKQYv7s0ibBcu_JCx-x2qFen-z4I7xgXMJKa4Hoka1J_PeTOcsmW1rYvolVyfqs-1Ur9by-c7Kv_m0Z7c0jW2qgCVf0o7SRkq2SVisXP20vjaLImsMncTx26cn8jVcnTSJDJsdBnu0vR7MyNVGm8mQJBeTyXH3SI6xdMgq5nM1wN2eYc36X87PzKllr4dfh7xi1RopGgSmTWnUQkc0n2HIYioWF8XRHX6xIntGcoE'
-                        },
-                        {
-                            id: '2',
-                            providerName: "Mike's Plumbing Co.",
-                            title: 'Commercial & Residential',
-                            rating: 4.8,
-                            reviewCount: 88,
-                            description: '24/7 emergency services available. Licensed and insured for your peace of mind.',
-                            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1A19MdHP5NG68It-tJzzq2ppp5TftyI0N2h-_3TmzkVL53fPAR4YOBpgJc_doO5_tbqF9nZNUAdlhxM9FL5C7-C-Pg8k5MD3Eq9Ud7Jk5QIv1cv5hrL4M0irrQI2Qaoxzj-6nVDVob6GV_oJ9Mt81bZnJiS6mS-EPK-Mb2BqWFa1NyoYfYWa2GeOVG67z8WFbZ5YkbCDZP63J4jvCp_ceymSVXFgloejASemGFnSR8CJ-62EW9zi8BhZ_r4f2rfptX-19ZPkViA4'
-                        },
-                        {
-                            id: '3',
-                            providerName: 'AquaFlow Experts',
-                            title: 'Eco-Friendly Solutions',
-                            rating: 4.7,
-                            reviewCount: 45,
-                            description: 'Specializing in water heaters and green plumbing solutions.',
-                            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDu-24UdFVh987krB0LgD6w1fKZm_jlnFF5t4EWCvdJN8QUKf1j2rZ28bnHoVEH1UI_pWPofKHtLSa2L-FAo1bYtxNTiMfDLcyK9x-F2tx6p1OhXaZv9K4A_4zJzNPQRV6gWoDvRKkG7XvfcPgn4mpf7ssho0QBJU24EO8NNi-7NcGAkMt8lBFlyaHK0-Xb8pdjUmqfloXxz6IEbV0iLv_UUrlELxXGD5Y5qk6QesdLQh6ph4Wv8lW16jUGc0QOceS-FAbn15jxQaM'
-                        }
-                    ]);
-                    setLoading(false);
-                }, 1000);
+                const data = await api.services.getAll();
+                setServices(data);
+                setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch services", error);
+                // Fallback to empty or keep loading false
                 setLoading(false);
             }
         };
@@ -116,7 +82,7 @@ const ServiceListings = () => {
                 {/* Results List */}
                 <div className="flex-grow overflow-y-auto">
                     <div className="p-6 flex justify-between items-center">
-                        <p className="text-sm font-medium text-gray-800 dark:text-white">Showing {services.length} plumbers near you</p>
+                        <p className="text-sm font-medium text-gray-800 dark:text-white">Showing {services.length} services near you</p>
                         <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                             <span>Sort by:</span>
                             <select className="form-select bg-transparent border-0 focus:ring-0 p-1 font-semibold text-gray-800 dark:text-white">
@@ -134,7 +100,7 @@ const ServiceListings = () => {
                             services.map((service) => (
                                 <div key={service.id} className="border-b border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-white/5">
                                     <div className="flex gap-4">
-                                        <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-12 w-12 flex-shrink-0" style={{ backgroundImage: `url("${service.image}")` }}></div>
+                                        <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-12 w-12 flex-shrink-0" style={{ backgroundImage: `url("${service.image || 'https://via.placeholder.com/150'}")` }}></div>
                                         <div className="flex-grow">
                                             <div className="flex justify-between items-start">
                                                 <div>
@@ -158,8 +124,8 @@ const ServiceListings = () => {
                 </div>
             </div>
             {/* Right Panel: Interactive Map */}
-            <div className="lg:col-span-7 xl:col-span-2 h-96 lg:h-auto relative">
-                <TomTomMap />
+            <div className="lg:col-span-7 xl:col-span-2 h-96 lg:h-auto lg:h-full relative">
+                <TomTomMap services={services} />
             </div>
         </div>
     );
