@@ -1,11 +1,46 @@
-import React from "react";
+import React, { useState } from "react";
 import "../styles/CustomerSignup.css";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/vitelogo.svg";
+import AuthService from "../api/AuthService";
 
 
 export default function CustomerSignup() {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    pincode: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevState) => ({ ...prevState, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setError("");
+    try {
+      // Exclude confirmPassword from the payload
+      const { confirmPassword, ...signupData } = formData;
+
+      await AuthService.registerCustomer(signupData);
+
+      navigate("/login");
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   return (
     <div>
@@ -50,60 +85,95 @@ export default function CustomerSignup() {
           <h2 className="card-title">Customer Signup</h2>
           <p className="card-sub">Create your account to quickly book services near you.</p>
 
-          <form>
+          <form onSubmit={handleSubmit}>
 
-            <div className="form-grid-2">
-              <div className="field">
-                <label>First Name *</label>
-                <input type="text" placeholder="Rajkumar" />
-              </div>
-
-              <div className="field">
-                <label>Last Name *</label>
-                <input type="text" placeholder="Kothakota" />
-              </div>
+            <div className="field">
+              <label>Full Name *</label>
+              <input
+                type="text"
+                name="fullName"
+                placeholder="XYZ"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="form-grid-2">
               <div className="field">
                 <label>Email *</label>
-                <input type="email" placeholder="you@example.com" />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
               </div>
 
               <div className="field">
-                <label>Phone *</label>
-                <input type="tel" placeholder="9876543210" />
+                <label>Mobile No *</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="9876543210"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                />
               </div>
             </div>
 
             <div className="field">
               <label>Address *</label>
-              <textarea placeholder="Street, House No., Landmark"></textarea>
+              <textarea
+                name="address"
+                placeholder="Street, House No., Landmark"
+                value={formData.address}
+                onChange={handleChange}
+                required
+              ></textarea>
             </div>
 
             <div className="form-grid-2">
-              <div className="field">
-                <label>City *</label>
-                <input type="text" placeholder="Tirupati" />
-              </div>
-
               <div className="field">
                 <label>Pincode *</label>
-                <input type="text" placeholder="517501" />
+                <input
+                  type="text"
+                  name="pincode"
+                  placeholder="517501"
+                  value={formData.pincode}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-            </div>
-
-            <div className="form-grid-2">
               <div className="field">
                 <label>Password *</label>
-                <input type="password" placeholder="Create password" />
-              </div>
-
-              <div className="field">
-                <label>Confirm Password *</label>
-                <input type="password" placeholder="Re-enter password" />
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Create password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
               </div>
             </div>
+
+            <div className="field">
+              <label>Confirm Password *</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Re-enter password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
 
             <div className="actions">
               <button type="submit" className="btn-primary">

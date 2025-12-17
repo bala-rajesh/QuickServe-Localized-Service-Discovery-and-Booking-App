@@ -1,10 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
 import "../styles/Login.css";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/vitelogo.svg";
+import AuthService from "../api/AuthService";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevState) => ({ ...prevState, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const data = await AuthService.login(formData);
+      // Assuming the response includes user role for redirection
+      if (data.role === "PROVIDER") {
+        navigate("/service-provider/dashboard");
+      } else {
+        navigate("/"); // Or customer dashboard
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   return (
     <div className="page-wrapper">
@@ -35,26 +62,42 @@ export default function Login() {
             Login using your phone number or email and password.
           </p>
 
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="field">
-              <label>Phone Number or Email</label>
-              <input type="text" placeholder="Enter phone or email" />
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="field">
               <label>Password</label>
-              <input type="password" placeholder="Enter password" />
+              <input
+                type="password"
+                name="password"
+                placeholder="Enter password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="forgot">Forgot password?</div>
 
-            <button type="button" className="btn btn-primary login-btn" onClick={() => navigate("/service-provider/dashboard")}>
+            {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+
+            <button type="submit" className="btn btn-primary login-btn">
               Login
             </button>
 
             <p className="secondary">
               New User?{" "}
-              <span onClick={() => navigate("/signup/customer")}>
+              <span onClick={() => navigate("/signup/customer")} style={{ cursor: "pointer", color: "#2563eb" }}>
                 Create an account
               </span>
             </p>
