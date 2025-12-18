@@ -27,6 +27,23 @@ const AuthService = {
       throw new Error(err.response?.data?.message || "Provider signup failed.");
     }
   },
+
+  getCurrentUser: async () => {
+    try {
+      const response = await api.get('/auth/me');
+      return response.data;
+    } catch (err) {
+      throw new Error("Not authenticated");
+    }
+  },
+
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      // Ignore errors
+    }
+  },
 };
 
 export default AuthService;

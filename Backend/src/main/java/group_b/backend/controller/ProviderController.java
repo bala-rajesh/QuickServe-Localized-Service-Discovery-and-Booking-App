@@ -10,6 +10,8 @@ import group_b.backend.model.BookingStatus;
 import group_b.backend.service.ProviderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,7 +49,7 @@ public class ProviderController {
             @RequestParam(required = false) BookingStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            Pageable pageable) {
+            @PageableDefault(size = 10, sort = "scheduledDate", direction = Sort.Direction.DESC) Pageable pageable) {
         long providerId = getAuthenticatedProviderId();
         PaginatedResponseDto<BookingDto> bookings = providerService.getBookings(providerId, status, startDate, endDate, pageable);
         return ResponseEntity.ok(bookings);

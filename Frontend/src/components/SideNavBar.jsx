@@ -6,8 +6,10 @@ import InventoryIcon from './icons/InventoryIcon';
 import PaymentsIcon from './icons/PaymentsIcon';
 import PersonIcon from './icons/PersonIcon';
 import LogoutIcon from './icons/LogoutIcon';
+import { useAuth } from './AuthContext';
 
 const SideNavBar = ({ isSideNavOpen }) => {
+    const { logout } = useAuth();
     const navItems = [
         { id: 'profile', icon: <PersonIcon />, label: 'Profile Details' },
         { id: 'dashboard', icon: <DashboardIcon />, label: 'Dashboard' },
@@ -46,7 +48,7 @@ const SideNavBar = ({ isSideNavOpen }) => {
                         ))}
                     </nav>
                     <button
-                        onClick={() => alert('Logout clicked!')} // Replace with actual logout logic
+                        onClick={logout}
                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/20 mt-4"
                     >
                         <LogoutIcon />
