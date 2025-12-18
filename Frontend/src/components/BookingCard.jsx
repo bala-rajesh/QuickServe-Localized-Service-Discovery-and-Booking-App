@@ -1,17 +1,8 @@
-// src/components/BookingCard.jsx
+import React from 'react';
 
-const PLUMB_PERFECT_AVATAR = 'https://via.placeholder.com/45/007bff/ffffff?text=PP'; 
-const providerImage='./src/assets/images/provider_jane.png';
-function BookingCard({ 
-  providerName, 
-  serviceType, 
-  date, 
-  time, 
-  status, 
-  statusColor, 
-  providerImage 
-}) {
-  
+const DEFAULT_AVATAR = 'https://via.placeholder.com/45/007bff/ffffff?text=User'; 
+
+function BookingCard({ providerName, serviceType, date, time, status, statusColor, providerImage }) {
   const cardStyle = {
     flex: '0 0 48%', 
     maxWidth: 'calc(50% - 12.5px)', 
@@ -22,29 +13,19 @@ function BookingCard({
   };
 
   const statusStyle = {
-    backgroundColor: statusColor,
+    backgroundColor: statusColor || '#6c757d',
     color: 'white',
     padding: '4px 8px',
     borderRadius: '4px',
     fontSize: '0.8rem',
     fontWeight: 600,
   };
-  
-  const avatarSrc = providerImage || PLUMB_PERFECT_AVATAR || Acme;
-
-  const handleReschedule = () => alert(`Rescheduling booking with ${providerName}...`);
-  const handleCancel = () => alert(`Cancelling booking with ${providerName}...`);
-  const handleContact = () => alert(`Opening chat/call with ${providerName}...`);
 
   return (
     <div style={cardStyle}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img 
-            src={avatarSrc} 
-            alt={providerName} 
-            style={{ width: '45px', height: '45px', borderRadius: '50%', marginRight: '15px', objectFit: 'cover' }} 
-          />
+          <img src={providerImage || DEFAULT_AVATAR} alt={providerName} style={{ width: '45px', height: '45px', borderRadius: '50%', marginRight: '15px', objectFit: 'cover' }} />
           <div>
             <h4 style={{ margin: 0 }}>{providerName}</h4>
             <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>{serviceType}</p>
@@ -59,33 +40,21 @@ function BookingCard({
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-        
-        <button style={{ padding: '8px 15px', border: '1px solid #ccc', borderRadius: '5px', cursor: 'pointer', backgroundColor: 'white', color: '#333' }}>
+        <button style={{ padding: '8px 15px', border: '1px solid #ccc', borderRadius: '5px', cursor: 'pointer', backgroundColor: 'white' }}>
           View Details
         </button>
-        
-        {status === 'Confirmed' && (
+        {status === 'Booked' && (
           <>
-            <button 
-              onClick={handleReschedule}
-              style={{ padding: '8px 15px', border: '1px solid #007bff', borderRadius: '5px', cursor: 'pointer', backgroundColor: '#e6f0ff', color: '#007bff' }}
-            >
+            <button style={{ padding: '8px 15px', border: '1px solid #007bff', borderRadius: '5px', cursor: 'pointer', backgroundColor: 'white', color: '#007bff' }}>
               Reschedule
             </button>
-            <button 
-              onClick={handleCancel}
-              style={{ padding: '8px 15px', border: '1px solid #f44336', borderRadius: '5px', cursor: 'pointer', backgroundColor: '#ffe6e6', color: '#f44336' }}
-            >
+            <button style={{ padding: '8px 15px', border: '1px solid #f44336', borderRadius: '5px', cursor: 'pointer', backgroundColor: 'white', color: '#f44336' }}>
               Cancel
             </button>
           </>
         )}
-        
         {status === 'In Progress' && (
-          <button 
-            onClick={handleContact}
-            style={{ padding: '8px 15px', border: '1px solid #333', borderRadius: '5px', cursor: 'pointer', backgroundColor: '#333', color: 'white' }}
-          >
+          <button style={{ padding: '8px 15px', border: '1px solid #333', borderRadius: '5px', cursor: 'pointer', backgroundColor: '#333', color: 'white' }}>
             Contact Provider
           </button>
         )}
