@@ -10,10 +10,12 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import CustomerSignup from "./pages/CustomerSignup";
 import ProviderSignup from "./pages/ProviderSignup";
+import { AuthProvider } from './components/AuthContext';
 
 function App() {
   return (
     <BrowserRouter>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -27,6 +29,7 @@ function App() {
             <Route path="earnings" element={<EarningsPage />} />
           </Route>
         </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

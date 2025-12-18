@@ -97,11 +97,31 @@ public class AuthController {
         return authenticateUserInternal(loginRequest);
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userDetails.getUsername()));
+
+            Long specificId = user.getId();
+            if (user.getRole() == UserRole.PROVIDER) {
+                ServiceProvider sp = serviceProviderRepository.findByUser(user)
+                        .orElseThrow(() -> new RuntimeException("Error: Provider profile not found."));
+                specificId = sp.getId();
+            }
+
+            return ResponseEntity.ok(new JwtResponse(specificId, user.getRole().name()));
+        }
+        return ResponseEntity.status(401).body("User not authenticated");
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<?> logoutUser() {
         ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body("You've been signed out!");
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).build();
     }
 
     private ResponseEntity<?> authenticateUserInternal(LoginRequest loginRequest) {
