@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-// --- Styling Definitions (The Missing Pieces) ---
+// --- Styling Definitions ---
 
 const formGroupStyle = {
     marginBottom: '20px',
@@ -17,7 +17,7 @@ const inputStyle = {
     flexGrow: 1,
     fontSize: '1rem',
     width: '100%',
-    boxSizing: 'border-box',
+    boxSizing: 'border-box', // Prevents width overflow
 };
 
 const labelStyle = {
@@ -46,10 +46,10 @@ const largeTextAreaStyle = {
 const cardStyle = {
     backgroundColor: 'white',
     borderRadius: '12px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-    padding: '30px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+    padding: '40px',
     maxWidth: '800px',
-    margin: '0 auto',
+    width: '95%', // Ensures it looks good on tablets/mobile
 };
 
 const buttonPrimaryStyle = {
@@ -61,7 +61,6 @@ const buttonPrimaryStyle = {
     cursor: 'pointer',
     fontWeight: 'bold',
     fontSize: '1rem',
-    transition: 'background-color 0.2s',
 };
 
 const buttonSecondaryStyle = {
@@ -73,7 +72,6 @@ const buttonSecondaryStyle = {
     cursor: 'pointer',
     fontWeight: '600',
     fontSize: '1rem',
-    transition: 'background-color 0.2s',
 };
 
 
@@ -84,6 +82,7 @@ const BookingForm = ({ onCancel, initialCategory }) => {
     const [requestDetails, setRequestDetails] = useState('');
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
+    const [currentStep, setCurrentStep] = useState(1);
 
     // Update category if initialCategory prop changes
     useEffect(() => {
@@ -92,33 +91,20 @@ const BookingForm = ({ onCancel, initialCategory }) => {
         }
     }, [initialCategory]);
 
-
-    // 2. Booking Step Management (Placeholder for future expansion)
-    // For now, we only render Step 1
-    const [currentStep, setCurrentStep] = useState(1);
-    
-    // Placeholder function for proceeding to the next step
     const handleContinue = (e) => {
         e.preventDefault();
-        // In a real application, you would validate inputs before continuing
         if (category && address && requestDetails && date && time) {
-             // For now, we'll just log and simulate moving to a "provider selection" step
-             console.log("Service details gathered:", { category, address, requestDetails, date, time });
              setCurrentStep(2); 
         } else {
-            // Use a custom message box instead of alert()
-            console.error("Please fill in all required fields.");
-            // You can implement a simple UI message display here if needed
+             console.error("Please fill in all required fields.");
         }
     };
 
-    // --- Content Rendered based on Step (Currently only Step 1 is built out) ---
+    // --- Content Rendered based on Step ---
 
     const renderStep1 = () => (
         <div style={{ width: '100%' }}>
-            
             <h3 style={sectionTitleStyle}>1. What & Where</h3>
-            
             <div style={formGroupStyle}>
                 <div style={{ flex: 1 }}>
                     <label htmlFor="service-category" style={labelStyle}>Service Category</label>
@@ -152,7 +138,7 @@ const BookingForm = ({ onCancel, initialCategory }) => {
                 <label htmlFor="request-details" style={labelStyle}>Describe the Request (Be specific!)</label>
                 <textarea 
                     id="request-details"
-                    placeholder="E.g., The kitchen faucet is leaking heavily and needs a replacement cartridge. Any pictures or key details help!" 
+                    placeholder="E.g., The kitchen faucet is leaking heavily..." 
                     value={requestDetails} 
                     onChange={(e) => setRequestDetails(e.target.value)} 
                     style={largeTextAreaStyle}
@@ -164,40 +150,17 @@ const BookingForm = ({ onCancel, initialCategory }) => {
             <div style={formGroupStyle}>
                 <div style={{ flex: 1 }}>
                     <label htmlFor="service-date" style={labelStyle}>Date</label>
-                    <input 
-                        id="service-date"
-                        type="date" 
-                        value={date} 
-                        onChange={(e) => setDate(e.target.value)} 
-                        style={inputStyle}
-                    />
+                    <input id="service-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
                 </div>
                 <div style={{ flex: 1 }}>
                     <label htmlFor="service-time" style={labelStyle}>Time Window</label>
-                    <input 
-                        id="service-time"
-                        type="time" 
-                        value={time} 
-                        onChange={(e) => setTime(e.target.value)} 
-                        style={inputStyle}
-                    />
+                    <input id="service-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} style={inputStyle} />
                 </div>
             </div>
 
-            {/* Action Buttons */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-                <button 
-                    onClick={onCancel} 
-                    style={buttonSecondaryStyle}
-                >
-                    Cancel / Back to Dashboard
-                </button>
-                <button 
-                    onClick={handleContinue} 
-                    style={buttonPrimaryStyle}
-                >
-                    Continue to Providers
-                </button>
+                <button onClick={onCancel} style={buttonSecondaryStyle}>Cancel / Back to Dashboard</button>
+                <button onClick={handleContinue} style={buttonPrimaryStyle}>Continue to Providers</button>
             </div>
         </div>
     );
@@ -205,28 +168,40 @@ const BookingForm = ({ onCancel, initialCategory }) => {
     const renderStep2 = () => (
         <div style={{padding: '30px', textAlign: 'center'}}>
             <h3 style={{color: '#007bff', fontSize: '2rem'}}>Select Provider</h3>
-            <p>This is where the user would select a professional based on quotes and reviews.</p>
-            <p>Current step: {currentStep}</p>
-            <button onClick={() => setCurrentStep(1)} style={buttonSecondaryStyle}>
-                &larr; Back to Details
-            </button>
+            <p>We're matching you with professionals...</p>
+            <button onClick={() => setCurrentStep(1)} style={buttonSecondaryStyle}>&larr; Back to Details</button>
         </div>
     );
 
-    // --- Main Component Render ---
     return (
-        <div style={cardStyle}>
-            <h1 style={{ color: '#007bff', fontSize: '2rem', marginBottom: '10px' }}>
-                Schedule a Service
-            </h1>
-            <p style={{ color: '#666', marginBottom: '30px', borderBottom: '1px solid #eee', paddingBottom: '20px' }}>
-                Enter your service request details below. We'll find the best professionals near you.
-            </p>
+        /* --- MAIN WRAPPER: Centers horizontally and provides top clearance --- */
+        <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'flex-start', // Allows us to control the top distance with padding
+            width: '100vw',           // Full browser width
+            minHeight: '100vh', 
+            backgroundColor: '#f8fafc',
+            position: 'absolute',     // Breaks out of layout constraints
+            left: 0,
+            top: 0,
+            zIndex: 100,
+            paddingTop: '100px',      // Clears the top navigation bar
+            paddingBottom: '50px',
+            boxSizing: 'border-box',
+            overflowY: 'auto'         // Enables scrolling if content is long
+        }}>
+            <div style={cardStyle}>
+                <h1 style={{ color: '#007bff', fontSize: '2.2rem', marginBottom: '10px' }}>
+                    Schedule a Service
+                </h1>
+                <p style={{ color: '#666', marginBottom: '30px', borderBottom: '1px solid #eee', paddingBottom: '20px' }}>
+                    Enter your service request details below. We'll find the best professionals near you.
+                </p>
 
-            {/* Render current step content */}
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            
+                {currentStep === 1 && renderStep1()}
+                {currentStep === 2 && renderStep2()}
+            </div>
         </div>
     );
 }

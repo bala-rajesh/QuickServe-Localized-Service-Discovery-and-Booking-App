@@ -2,60 +2,112 @@ import React from 'react';
 
 const DEFAULT_AVATAR = 'https://via.placeholder.com/45/007bff/ffffff?text=User'; 
 
-function BookingCard({ providerName, serviceType, date, time, status, statusColor, providerImage }) {
-  const cardStyle = {
-    flex: '0 0 48%', 
-    maxWidth: 'calc(50% - 12.5px)', 
-    backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.05)',
+function BookingCard({ 
+  providerName, 
+  serviceType, 
+  date, 
+  time, 
+  status, 
+  providerImage, 
+  onDetailsClick, 
+  onRescheduleClick 
+}) {
+  // Logic to determine badge colors based on status
+  const getStatusBg = (s) => {
+    if (s === 'Booked') return '#e8f5e9';
+    if (s === 'In Progress') return '#fff8e1';
+    if (s === 'Rejected') return '#ffebee';
+    return '#f1f5f9';
   };
-
-  const statusStyle = {
-    backgroundColor: statusColor || '#6c757d',
-    color: 'white',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '0.8rem',
-    fontWeight: 600,
+  
+  const getStatusTextColor = (s) => {
+    if (s === 'Booked') return '#2e7d32';
+    if (s === 'In Progress') return '#f57f17';
+    if (s === 'Rejected') return '#d32f2f';
+    return '#475569';
   };
 
   return (
-    <div style={cardStyle}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src={providerImage || DEFAULT_AVATAR} alt={providerName} style={{ width: '45px', height: '45px', borderRadius: '50%', marginRight: '15px', objectFit: 'cover' }} />
+    <div style={{
+      backgroundColor: 'white',
+      padding: '20px',
+      borderRadius: '12px',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+      border: '1px solid #f1f5f9',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '15px'
+    }}>
+      {/* Header section with Provider info and Status Badge */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img 
+            src={providerImage || DEFAULT_AVATAR} 
+            alt={providerName} 
+            style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} 
+          />
           <div>
-            <h4 style={{ margin: 0 }}>{providerName}</h4>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>{serviceType}</p>
+            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{providerName}</h4>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>{serviceType}</p>
           </div>
         </div>
-        <span style={statusStyle}>{status}</span>
+        <span style={{
+          backgroundColor: getStatusBg(status),
+          color: getStatusTextColor(status),
+          padding: '4px 10px',
+          borderRadius: '20px',
+          fontSize: '0.75rem',
+          fontWeight: 700
+        }}>{status}</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '20px', borderTop: '1px solid #eee', borderBottom: '1px solid #eee', padding: '15px 0', fontSize: '0.9rem', color: '#444' }}>
-        <span style={{ fontWeight: 'bold' }}>🗓️ {date}</span>
-        <span style={{ fontWeight: 'bold' }}>⏱️ {time}</span>
+      {/* Date and Time Details */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '15px', 
+        padding: '12px 0', 
+        borderTop: '1px solid #f1f5f9', 
+        borderBottom: '1px solid #f1f5f9', 
+        fontSize: '0.85rem' 
+      }}>
+        <span>🗓️ <b>{date}</b></span>
+        <span>⏱️ <b>{time}</b></span>
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-        <button style={{ padding: '8px 15px', border: '1px solid #ccc', borderRadius: '5px', cursor: 'pointer', backgroundColor: 'white' }}>
-          View Details
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button 
+          onClick={onDetailsClick} // Triggers the modal in Dashboard
+          style={{ 
+            flex: 1, 
+            padding: '8px', 
+            border: '1px solid #e2e8f0', 
+            borderRadius: '6px', 
+            cursor: 'pointer', 
+            backgroundColor: 'white',
+            fontWeight: '600',
+            transition: 'background 0.2s'
+          }}
+        >
+          Details
         </button>
+        
+        {/* Reschedule button only appears if status is 'Booked' */}
         {status === 'Booked' && (
-          <>
-            <button style={{ padding: '8px 15px', border: '1px solid #007bff', borderRadius: '5px', cursor: 'pointer', backgroundColor: 'white', color: '#007bff' }}>
-              Reschedule
-            </button>
-            <button style={{ padding: '8px 15px', border: '1px solid #f44336', borderRadius: '5px', cursor: 'pointer', backgroundColor: 'white', color: '#f44336' }}>
-              Cancel
-            </button>
-          </>
-        )}
-        {status === 'In Progress' && (
-          <button style={{ padding: '8px 15px', border: '1px solid #333', borderRadius: '5px', cursor: 'pointer', backgroundColor: '#333', color: 'white' }}>
-            Contact Provider
+          <button 
+            onClick={onRescheduleClick} // Triggers the reschedule logic
+            style={{ 
+              flex: 1, 
+              padding: '8px', 
+              border: 'none', 
+              borderRadius: '6px', 
+              cursor: 'pointer', 
+              backgroundColor: '#2563eb', 
+              color: 'white',
+              fontWeight: '600'
+            }}
+          >
+            Reschedule
           </button>
         )}
       </div>

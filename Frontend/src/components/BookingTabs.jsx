@@ -1,26 +1,40 @@
+import React from 'react';
+
 function BookingTabs({ activeTab, onTabChange }) {
   const tabs = ['All', 'Booked', 'In Progress', 'Cancelled', 'Rejected'];
   
-  const getStyle = (tabName) => ({
-    padding: '8px 20px',
-    border: '1px solid #ccc',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    marginRight: '10px',
-    marginBottom: '10px',
-    fontWeight: 'bold',
-    backgroundColor: activeTab === tabName ? '#007bff' : 'transparent',
-    color: activeTab === tabName ? 'white' : '#666',
-    borderColor: activeTab === tabName ? '#007bff' : '#ccc',
-  });
-
   return (
-    <div className="booking-tabs" style={{ marginBottom: '10px', display: 'flex', flexWrap: 'wrap' }}>
-      {tabs.map((tab) => (
-        <button key={tab} onClick={() => onTabChange(tab)} style={getStyle(tab)}>
-          {tab}
-        </button>
-      ))}
+    <div style={{ 
+      display: 'inline-flex', 
+      backgroundColor: '#f1f5f9', 
+      padding: '4px', 
+      borderRadius: '10px', 
+      gap: '4px',
+      marginBottom: '10px'
+    }}>
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab;
+        return (
+          <button 
+            key={tab} 
+            onClick={() => onTabChange(tab)} 
+            style={{
+              padding: '8px 16px',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              backgroundColor: isActive ? 'white' : 'transparent',
+              color: isActive ? '#2563eb' : '#64748b',
+              boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            {tab}
+          </button>
+        );
+      })}
     </div>
   );
 }

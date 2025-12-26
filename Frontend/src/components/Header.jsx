@@ -1,64 +1,38 @@
 import React from "react";
 import "./Header.css";
 
-// Using your existing images
 import logo from "../assets/images/vite.svg";
 import profilePic from "../assets/images/user_alex.png";
 
-function Header({
-    currentView,
-    onBookServiceClick,
-    onServicesClick,
-    onMessagesClick,
-    onProfileClick,
-}) {
+function Header({ currentView, onBookServiceClick, onLogoClick }) {
     return (
         <header className="qs-header">
-            
-            {/* Left → Logo + Title */}
-            <div className="qs-left">
-                <img src={logo} alt="Logo" className="qs-logo" />
-                <h2 className="qs-title">QuickServe</h2>
-            </div>
+            <div className="qs-header-container">
+                {/* Left → Logo + Title */}
+                <div className="qs-left" onClick={onLogoClick} style={{ cursor: 'pointer' }}>
+                    <img src={logo} alt="Logo" className="qs-logo" />
+                    <h2 className="qs-title">QuickServe</h2>
+                </div>
 
-            {/* Center → Nav Links */}
-            <nav className="qs-nav">
-                <span
-                    className={currentView === "services" ? "active" : ""}
-                    onClick={onServicesClick}
-                >
-                    Find Services
-                </span>
+                {/* Right → Action Button + Profile */}
+                <div className="qs-right">
+                    {currentView !== 'booking' && (
+                        <button
+                            className="qs-book-btn"
+                            onClick={() => onBookServiceClick("")}
+                        >
+                            Book a New Service
+                        </button>
+                    )}
 
-                <span
-                    className={currentView === "messages" ? "active" : ""}
-                    onClick={onMessagesClick}
-                >
-                    Messages
-                </span>
-
-                <span
-                    className={currentView === "profile" ? "active" : ""}
-                    onClick={onProfileClick}
-                >
-                    Profile
-                </span>
-            </nav>
-
-            {/* Right → Button + Profile */}
-            <div className="qs-right">
-                <button
-                    className="qs-book-btn"
-                    onClick={() => onBookServiceClick("")}
-                >
-                    Book a New Service
-                </button>
-
-                <img
-                    src={profilePic}
-                    alt="User"
-                    className="qs-profile-img"
-                />
+                    <div className="qs-profile-wrapper">
+                        <img
+                            src={profilePic}
+                            alt="User"
+                            className="qs-profile-img"
+                        />
+                    </div>
+                </div>
             </div>
         </header>
     );

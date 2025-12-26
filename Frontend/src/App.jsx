@@ -1,73 +1,38 @@
+// src/App.jsx
 import React, { useState } from 'react';
 import './App.css'; 
 import Header from './components/Header'; 
 import Dashboard from './components/Dashboard'; 
 import Summary from './components/Summary'; 
 import BookingForm from './components/BookingForm'; 
-import FindServices from './components/FindServices';
-import MessagesView from './components/MessagesView'; 
-
-const Profile = () => (
-    <div className="main-booking-area" style={{padding: '30px 40px', backgroundColor: '#f7f9fc', minHeight: 'calc(100vh - 80px)'}}>
-        <h1>User Profile & Settings</h1>
-        <p>Manage your account, change your password, and update preferences here.</p>
-    </div>
-);
 
 function App() {
     const [currentView, setCurrentView] = useState('dashboard');
-    const [preSelectedCategory, setPreSelectedCategory] = useState(''); 
-
-    const switchToBooking = (categoryName = '') => { 
-        setPreSelectedCategory(categoryName);
-        setCurrentView('booking');
-    };
     
     const switchToDashboard = () => setCurrentView('dashboard');
-    const switchToServices = () => setCurrentView('services');
-    const switchToMessages = () => setCurrentView('messages');
-    const switchToProfile = () => setCurrentView('profile');
-
-    let mainContent;
-
-    if (currentView === 'dashboard') {
-        mainContent = (
-            <div className="flex justify-center p-6 w-full"> 
-                <div className="w-full max-w-7xl flex flex-col lg:flex-row gap-6 lg:items-start">
-                    <div className="lg:w-3/4">
-                        <Dashboard className="main-content-area" />
-                    </div>
-                    <div className="lg:w-1/4">
-                        <Summary className="summary-area" />
-                    </div>
-                </div>
-            </div>
-        );
-    } else if (currentView === 'booking') {
-        mainContent = (
-            <div className="main-booking-area flex justify-center p-6" style={{ padding: '30px 0' }}> 
-                <BookingForm onCancel={switchToDashboard} initialCategory={preSelectedCategory} /> 
-            </div>
-        );
-    } else if (currentView === 'services') {
-        mainContent = <FindServices onBookServiceClick={switchToBooking} onDashboardClick={switchToDashboard} />;
-    } else if (currentView === 'messages') {
-        mainContent = <MessagesView onNavigateToDashboard={switchToDashboard} />;
-    } else if (currentView === 'profile') {
-        mainContent = <Profile />;
-    }
+    const switchToBooking = () => setCurrentView('booking');
 
     return (
-        <div className="app-container" style={{ minHeight: '100vh', width: '100%' }}>
-            <Header 
-                className="header-area" 
-                currentView={currentView} 
-                onBookServiceClick={switchToBooking} 
-                onServicesClick={switchToServices}
-                onMessagesClick={switchToMessages}
-                onProfileClick={switchToProfile}
-            /> 
-            {mainContent}
+        <div className="app-container" style={{ minHeight: '100vh', backgroundColor: '#f8fafc', paddingTop: '92px' }}>
+            <Header currentView={currentView} onBookServiceClick={switchToBooking} onLogoClick={switchToDashboard} /> 
+
+            {/* THE FIX: Remove maxWidth and use width 100% */}
+            <div style={{ width: '100%', padding: '0 40px', boxSizing: 'border-box' }}>
+                {currentView === 'dashboard' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                        <Dashboard />
+                        
+                        {/* Summary moved to the bottom of the listings */}
+                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '30px', marginBottom: '50px' }}>
+                            <Summary />
+                        </div>
+                    </div>
+                ) : (
+                    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                        <BookingForm onCancel={switchToDashboard} /> 
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

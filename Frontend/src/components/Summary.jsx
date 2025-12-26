@@ -1,32 +1,54 @@
-// src/components/Summary.jsx
-
 function Summary({ className }) {
   return (
     <aside className={className}>
-      
-      {/* Summary Card */}
-      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
-        <h3 style={{ marginBottom: '10px' }}>Summary</h3>
-        <p style={{ margin: '5px 0', fontSize: '0.95rem' }}>Total Services Booked: <b>12</b></p>
-        <p style={{ margin: '5px 0', fontSize: '0.95rem' }}>Upcoming This Week: <b style={{ color: '#007bff' }}>2</b></p>
-      </div>
-      
-      {/* Need Help Card */}
-      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-        <p style={{ fontSize: '28px', margin: '10px 0', color: '#007bff' }}>❓</p>
-        <h4 style={{ color: '#333' }}>Need Help?</h4>
-        <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Find answers to common questions or contact our support team.</p>
-        <button style={{ 
-          backgroundColor: '#f7f9fc', 
-          color: '#007bff', 
-          padding: '8px 15px', 
-          border: '1px solid #007bff', 
-          borderRadius: '5px', 
-          cursor: 'pointer',
-          marginTop: '15px'
+      <div style={{ 
+          display: 'flex', 
+          gap: '20px', 
+          flexWrap: 'wrap', 
+          justifyContent: 'space-between' 
+      }}>
+        {/* Summary horizontal card */}
+        <div style={{ 
+            backgroundColor: 'white', 
+            padding: '24px', 
+            borderRadius: '12px', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+            flex: '1', 
+            minWidth: '300px' 
         }}>
-          Visit FAQ
-        </button>
+          <h3 style={{ marginBottom: '16px', fontSize: '1.2rem', fontWeight: 700 }}>Service Summary</h3>
+          <div style={{ display: 'flex', gap: '30px' }}>
+              <p>Total Booked: <b style={{ fontSize: '1.2rem' }}>12</b></p>
+              <p>This Week: <b style={{ color: '#2563eb', fontSize: '1.2rem' }}>2</b></p>
+          </div>
+        </div>
+        
+        {/* Help card horizontal */}
+        <div style={{ 
+            backgroundColor: 'white', 
+            padding: '24px', 
+            borderRadius: '12px', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+            flex: '1', 
+            minWidth: '300px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '20px'
+        }}>
+          <p style={{ fontSize: '32px', margin: 0 }}>❓</p>
+          <div style={{ flex: 1 }}>
+              <h4 style={{ margin: '0 0 4px 0' }}>Need Help?</h4>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>Contact support for assistance.</p>
+          </div>
+          <button style={{ 
+            padding: '10px 24px', 
+            border: '1px solid #2563eb', 
+            borderRadius: '8px', 
+            color: '#2563eb',
+            background: 'none',
+            cursor: 'pointer'
+          }}>Visit FAQ</button>
+        </div>
       </div>
     </aside>
   );
