@@ -1,6 +1,7 @@
 package group_b.backend.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -34,6 +35,18 @@ public class ServiceProvider {
 
     @OneToMany(mappedBy = "provider")
     private List<ProviderWorkingHours> workingHours;
+
+    @Column(name = "rating")
+    private BigDecimal rating;
+
+    @Column(name = "experience")
+    private String experience;
+
+    @Column(name = "completed_jobs")
+    private Integer completedJobs;
+
+    @Column(name = "skills", columnDefinition = "TEXT")
+    private String skills;
 
     public Long getId() {
         return id;
@@ -105,5 +118,37 @@ public class ServiceProvider {
 
     public void setAbout(String about) {
         this.about = about;
+    }
+
+    public BigDecimal getRating() {
+        return rating;
+    }
+
+    public void setRating(BigDecimal rating) {
+        this.rating = rating;
+    }
+
+    public String getExperience() {
+        return experience;
+    }
+
+    public void setExperience(String experience) {
+        this.experience = experience;
+    }
+
+    public Integer getCompletedJobs() {
+        return completedJobs;
+    }
+
+    public void setCompletedJobs(Integer completedJobs) {
+        this.completedJobs = completedJobs;
+    }
+
+    public String getSkills() {
+        return skills;
+    }
+
+    public void setSkills(String skills) {
+        this.skills = skills;
     }
 }

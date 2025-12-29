@@ -14,6 +14,7 @@ public class BookingDto {
     private String jobLocationAddress; // Will be nulled based on status
     private String customerContactPhone; // Will be nulled based on status
     private BigDecimal agreedPrice;
+    private String description;
     private LocalDate scheduledDate;
     private LocalTime scheduledTime;
     private BookingStatus status;

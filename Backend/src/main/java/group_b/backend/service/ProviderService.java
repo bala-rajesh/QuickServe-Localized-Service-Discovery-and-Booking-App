@@ -57,7 +57,8 @@ public class ProviderService {
         stats.setTodayEarnings(bookingRepository.getTodayEarnings(providerId, LocalDate.now()));
         stats.setUpcomingCount(bookingRepository.countByProviderIdAndStatusAndScheduledDateAfter(providerId, BookingStatus.CONFIRMED, LocalDate.now()));
         stats.setPendingRequestsCount(bookingRepository.countByProviderIdAndStatus(providerId, BookingStatus.PENDING));
-        stats.setAverageRating(Optional.ofNullable(reviewRepository.getAverageRatingByProviderId(providerId)).orElse(0.0));
+        Double averageRating = reviewRepository.getAverageRatingByProviderId(providerId);
+        stats.setAverageRating(averageRating != null ? BigDecimal.valueOf(averageRating) : BigDecimal.ZERO);
 
         var dashboardDto = new ProviderDashboardDto();
         dashboardDto.setStats(stats);
@@ -139,6 +140,9 @@ public class ProviderService {
         provider.setBioShort(profileDto.getBio());
         provider.setAbout(profileDto.getAbout());
         provider.setProfileImageUrl(profileDto.getProfileImageUrl());
+        if (profileDto.getSkills() != null) {
+            provider.setSkills(String.join(", ", profileDto.getSkills()));
+        }
         if (profileDto.getWorkingHours() != null) {
             updateProviderWorkingHours(provider, profileDto.getWorkingHours());
             workingHoursRepository.saveAll(Objects.requireNonNull(provider.getWorkingHours()));
@@ -172,6 +176,7 @@ public class ProviderService {
         service.setName(updatedData.getName());
         service.setDescription(updatedData.getDescription());
         service.setPrice(updatedData.getPrice());
+        service.setDuration(updatedData.getDuration());
         service.setActive(updatedData.isActive());
 
         ProviderServiceEntity savedService = serviceRepository.save(service);
@@ -188,6 +193,7 @@ public class ProviderService {
         service.setName(serviceDto.getName());
         service.setDescription(serviceDto.getDescription());
         service.setPrice(serviceDto.getPrice());
+        service.setDuration(serviceDto.getDuration());
         service.setActive(serviceDto.isActive());
 
         ProviderServiceEntity savedService = serviceRepository.save(service);
@@ -353,6 +359,12 @@ public class ProviderService {
         dto.setBio(provider.getBioShort());
         dto.setAbout(provider.getAbout());
         dto.setProfileImageUrl(provider.getProfileImageUrl());
+
+        if (provider.getSkills() != null && !provider.getSkills().isEmpty()) {
+            dto.setSkills(Arrays.asList(provider.getSkills().split("\\s*,\\s*")));
+        } else {
+            dto.setSkills(Collections.emptyList());
+        }
         
         if (provider.getWorkingHours() != null) {
             dto.setWorkingHours(provider.getWorkingHours().stream().map(wh -> {
@@ -373,6 +385,7 @@ public class ProviderService {
         dto.setName(entity.getName());
         dto.setDescription(entity.getDescription());
         dto.setPrice(entity.getPrice());
+        dto.setDuration(entity.getDuration());
         dto.setActive(entity.isActive());
         return dto;
     }

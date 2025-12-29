@@ -59,13 +59,33 @@ public class ProviderSettingsService {
                 .orElseThrow(() -> new ResourceNotFoundException("ServiceProvider not found with id: " + providerId));
 
         ProviderServiceEntity newService = new ProviderServiceEntity();
+        newService.setDuration(serviceDto.getDuration());
         newService.setProvider(provider);
         newService.setName(serviceDto.getName());
-        newService.setDescription(serviceDto.getDescription()); // Add this line
+        newService.setDescription(serviceDto.getDescription());
         newService.setPrice(serviceDto.getPrice());
         newService.setActive(true); // Default to active
 
         ProviderServiceEntity savedService = serviceRepository.save(newService);
+        return toServiceDTO(savedService);
+    }
+
+    @Transactional
+    public ProviderServiceDTO updateService(@NonNull Long providerId, @NonNull Long serviceId, ProviderServiceDTO updatedData) {
+        ProviderServiceEntity service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + serviceId));
+
+        if (!service.getProvider().getId().equals(providerId)) {
+            throw new SecurityException("Service does not belong to the specified provider.");
+        }
+
+        service.setName(updatedData.getName());
+        service.setDescription(updatedData.getDescription());
+        service.setPrice(updatedData.getPrice());
+        service.setDuration(updatedData.getDuration());
+        service.setActive(updatedData.isActive());
+
+        ProviderServiceEntity savedService = serviceRepository.save(service);
         return toServiceDTO(savedService);
     }
 
@@ -109,8 +129,9 @@ public class ProviderSettingsService {
         ProviderServiceDTO dto = new ProviderServiceDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
-        dto.setDescription(entity.getDescription()); // Add this line
+        dto.setDescription(entity.getDescription());
         dto.setPrice(entity.getPrice());
+        dto.setDuration(entity.getDuration());
         dto.setActive(entity.isActive());
         return dto;
     }

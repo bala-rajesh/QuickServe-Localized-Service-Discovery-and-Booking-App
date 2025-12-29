@@ -1,15 +1,16 @@
 package group_b.backend.dto;
 
 import lombok.Data;
-
 import java.math.BigDecimal;
 
 @Data
-public class ProviderServiceDTO {
+public class ServiceSearchResultDto {
     private Long id;
     private String name;
-    private String description; // Add this line
+    private String description;
     private BigDecimal price;
-    private boolean active;
     private Integer duration;
+    private Long providerId;
+    private String providerName;
+    private BigDecimal providerRating;
 }

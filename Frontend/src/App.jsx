@@ -6,6 +6,11 @@ import ProfileDetailPage from './pages/Subpages/ProfileDetailPage';
 import BookingsPage from './pages/Subpages/BookingsPage';
 import MyServicesPage from './pages/Subpages/MyServicesPage';
 import EarningsPage from './pages/Subpages/EarningsPage';
+import CustomerPage from './pages/CustomerPage';
+import CustomerProfilePage from './pages/CustomerSubpages/ProfilePage';
+import FindServicesPage from './pages/CustomerSubpages/FindServicesPage';
+import CustomerDashboard from "./pages/CustomerSubpages/Home";
+import CustomerBookingsPage from './pages/CustomerSubpages/Bookingspage';
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import CustomerSignup from "./pages/CustomerSignup";
@@ -27,6 +32,12 @@ function App() {
             <Route path="bookings" element={<BookingsPage />} />
             <Route path="services" element={<MyServicesPage />} />
             <Route path="earnings" element={<EarningsPage />} />
+          </Route>
+          <Route path="/customer" element={<CustomerPage />}>
+            <Route path="dashboard" element={<CustomerDashboard />} />
+            <Route path="profile" element={<CustomerProfilePage />} />
+            <Route path="bookings" element={<CustomerBookingsPage />} />
+            <Route path="search" element={<FindServicesPage />} />
           </Route>
         </Routes>
       </AuthProvider>

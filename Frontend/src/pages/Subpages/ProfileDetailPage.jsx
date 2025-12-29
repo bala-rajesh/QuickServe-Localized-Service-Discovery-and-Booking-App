@@ -11,6 +11,7 @@ const ProfileDetailPage = () => {
         if (profile) {
             setFormData({
                 ...profile,
+                skills: profile.skills ? profile.skills.join(', ') : '',
                 workingHours: (profile.workingHours && profile.workingHours.length > 0)
                     ? profile.workingHours
                     : [
@@ -44,7 +45,11 @@ const ProfileDetailPage = () => {
 
     const handleSaveBasic = async () => {
         try {
-            await updateProfile(formData);
+            const payload = {
+                ...formData,
+                skills: formData.skills ? formData.skills.split(',').map(s => s.trim()).filter(s => s) : []
+            };
+            await updateProfile(payload);
             setIsEditingBasic(false);
         } catch (e) {
             // Error handled in hook
@@ -210,6 +215,19 @@ const ProfileDetailPage = () => {
                             disabled={!isEditingBasic}
                             className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
                         />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skills</label>
+                        <input
+                            type="text"
+                            name="skills"
+                            value={formData.skills || ''}
+                            onChange={handleChange}
+                            disabled={!isEditingBasic}
+                            placeholder="e.g. Plumbing, Pipe Fitting, Leak Repair"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 disabled:bg-gray-100 dark:disabled:bg-gray-900"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Separate skills with commas</p>
                     </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">About</label>

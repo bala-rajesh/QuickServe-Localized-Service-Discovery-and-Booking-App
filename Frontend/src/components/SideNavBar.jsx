@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import DashboardIcon from './icons/DashboardIcon';
 import BookOnlineIcon from './icons/BookOnlineIcon';
 import InventoryIcon from './icons/InventoryIcon';
@@ -9,14 +9,27 @@ import LogoutIcon from './icons/LogoutIcon';
 import { useAuth } from './AuthContext';
 
 const SideNavBar = ({ isSideNavOpen }) => {
-    const { logout } = useAuth();
-    const navItems = [
+    const { user, logout } = useAuth();
+    const location = useLocation();
+
+    const providerNavItems = [
         { id: 'profile', icon: <PersonIcon />, label: 'Profile Details' },
         { id: 'dashboard', icon: <DashboardIcon />, label: 'Dashboard' },
         { id: 'bookings', icon: <BookOnlineIcon />, label: 'Bookings' },
         { id: 'services', icon: <InventoryIcon />, label: 'My Services' },
         { id: 'earnings', icon: <PaymentsIcon />, label: 'Earnings' },
     ];
+
+    const customerNavItems = [
+        { id: 'dashboard', icon: <DashboardIcon />, label: 'Home' },
+        { id: 'profile', icon: <PersonIcon />, label: 'Profile' },
+        { id: 'bookings', icon: <BookOnlineIcon />, label: 'Bookings' },
+        { id: 'search', icon: <InventoryIcon />, label: 'Find Services' },
+    ];
+
+    // Determine view based on user role OR current path (fallback if user state is loading/null)
+    const isCustomerView = user?.role === 'CUSTOMER' || location.pathname.startsWith('/customer');
+    const navItems = isCustomerView ? customerNavItems : providerNavItems;
 
     return (
         <aside
@@ -29,8 +42,8 @@ const SideNavBar = ({ isSideNavOpen }) => {
                     <div className="flex items-center gap-3 px-2">
                         <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="A profile picture of XYZ" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDXZ77yi52dAlwyhaD0gqhBumC0iwbc4BvLknN5D3Tt4-7QFZK9y5GpMD3tgMULftzIhOeLHp9XE2Ho3YqO4X7HQ-h9J1PTDPaNcptntJ8TGT7PUj4nEO05Lyr6qoc6Q-c5QLsk2t49GfDj9tvG9dY8KkPgPlp-W71LI7CdaWJp1I4d8KJCdLB7tDakfFcynH89uJ9A7DEbpwfdfqKmf3atgI5SibQOhwkNkyWqjHqz4LW8DFgcIapgdTWbpYiK4zCcOGhsOau92jA")' }}></div>
                         <div className="flex flex-col">
-                            <h1 className="text-base font-medium">XYZ</h1>
-                            <p className="text-sm font-normal text-text-light/70 dark:text-text-dark/70">Service Provider</p>
+                            <h1 className="text-base font-medium">{user?.fullName || 'User'}</h1>
+                            <p className="text-sm font-normal text-text-light/70 dark:text-text-dark/70">{isCustomerView ? 'Customer' : 'Service Provider'}</p>
                         </div>
                     </div>
                     <nav className="flex flex-col gap-2 pt-4">
@@ -55,9 +68,11 @@ const SideNavBar = ({ isSideNavOpen }) => {
                         <p>Logout</p>
                     </button>
                 </div>
-                <Link to="/service-provider/services?action=create" className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold">
-                    <span className="truncate">Add New Service</span>
-                </Link>
+                {!isCustomerView && (
+                    <Link to="/service-provider/services?action=create" className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold">
+                        <span className="truncate">Add New Service</span>
+                    </Link>
+                )}
             </div>
         </aside>
     );

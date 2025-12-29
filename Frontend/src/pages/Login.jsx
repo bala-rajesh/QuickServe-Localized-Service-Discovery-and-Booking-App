@@ -20,16 +20,30 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    const { email, password } = formData;
+
     try {
-      const data = await AuthService.login(formData);
-      // Assuming the response includes user role for redirection
-      if (data.role === "PROVIDER") {
-        navigate("/service-provider/dashboard");
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.redirectUrl) {
+          navigate(data.redirectUrl);
+        } else {
+          navigate('/dashboard');
+        }
       } else {
-        navigate("/"); // Or customer dashboard
+        setError(data.message || "Login failed");
       }
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("An error occurred during login.");
     }
   };
 

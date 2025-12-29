@@ -1,7 +1,6 @@
 package group_b.backend.controller;
 
 import group_b.backend.dto.CustomerSignupDto;
-import group_b.backend.dto.JwtResponse;
 import group_b.backend.dto.LoginRequest;
 import group_b.backend.dto.ProviderSignupDto;
 import group_b.backend.exception.ResourceNotFoundException;
@@ -23,6 +22,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -113,7 +115,19 @@ public class AuthController {
                 specificId = sp.getId();
             }
 
-            return ResponseEntity.ok(new JwtResponse(specificId, user.getRole().name()));
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", specificId);
+            response.put("role", user.getRole().name());
+            response.put("fullName", user.getFullName());
+            response.put("email", user.getEmail());
+
+            if (user.getRole() == UserRole.PROVIDER) {
+                response.put("redirectUrl", "/service-provider/dashboard");
+            } else {
+                response.put("redirectUrl", "/customer/dashboard");
+            }
+
+            return ResponseEntity.ok(response);
         }
         return ResponseEntity.status(401).body("User not authenticated");
     }
@@ -143,9 +157,19 @@ public class AuthController {
             specificId = sp.getId();
         }
 
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", specificId);
+        response.put("role", user.getRole().name());
+        response.put("fullName", user.getFullName());
+        response.put("email", user.getEmail());
+
+        if (user.getRole() == UserRole.PROVIDER) {
+            response.put("redirectUrl", "/service-provider/dashboard");
+        } else {
+            response.put("redirectUrl", "/customer/dashboard");
+        }
+
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(new JwtResponse(
-                        specificId,
-                        user.getRole().name()));
+                .body(response);
     }
 }

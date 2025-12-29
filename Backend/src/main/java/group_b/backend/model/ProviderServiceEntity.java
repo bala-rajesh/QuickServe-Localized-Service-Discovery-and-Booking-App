@@ -23,4 +23,7 @@ public class ProviderServiceEntity {
 
     @Column(name = "is_active")
     private boolean isActive;
+
+    @Column(name = "duration")
+    private Integer duration;
 }

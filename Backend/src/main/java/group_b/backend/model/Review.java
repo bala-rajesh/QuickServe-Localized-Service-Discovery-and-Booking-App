@@ -2,6 +2,7 @@ package group_b.backend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.time.LocalDateTime; 
 
 @Entity
 @Table(name = "reviews")
@@ -18,4 +19,7 @@ public class Review {
 
     private Integer rating;
     private String comment;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }

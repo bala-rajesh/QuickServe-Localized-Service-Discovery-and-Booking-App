@@ -16,7 +16,7 @@ public class ProviderDashboardDto {
         private BigDecimal todayEarnings;
         private long upcomingCount;
         private long pendingRequestsCount;
-        private double averageRating;
+        private BigDecimal averageRating;
     }
 
     @Data

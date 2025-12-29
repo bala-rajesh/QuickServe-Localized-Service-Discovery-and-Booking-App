@@ -12,6 +12,7 @@ const MyServicesPage = () => {
         name: '',
         description: '',
         price: '',
+        duration: '',
         active: true
     });
 
@@ -38,6 +39,7 @@ const MyServicesPage = () => {
             originalService.name !== editForm.name ||
             originalService.description !== editForm.description ||
             originalService.price != editForm.price ||
+            originalService.duration != editForm.duration ||
             originalService.active !== editForm.active;
 
         if (!hasChanged) {
@@ -64,7 +66,7 @@ const MyServicesPage = () => {
 
     const handleCreateClick = () => {
         setIsCreating(true);
-        setNewServiceForm({ name: '', description: '', price: '', active: true });
+        setNewServiceForm({ name: '', description: '', price: '', duration: '', active: true });
     };
 
     const handleCreateSave = async () => {
@@ -143,6 +145,16 @@ const MyServicesPage = () => {
                                     className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (mins)</label>
+                                <input
+                                    type="number"
+                                    name="duration"
+                                    value={newServiceForm.duration}
+                                    onChange={handleNewServiceChange}
+                                    className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                />
+                            </div>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
@@ -197,6 +209,16 @@ const MyServicesPage = () => {
                                             className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                         />
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (mins)</label>
+                                        <input
+                                            type="number"
+                                            name="duration"
+                                            value={editForm.duration || ''}
+                                            onChange={handleChange}
+                                            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                        />
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="checkbox"
@@ -223,7 +245,10 @@ const MyServicesPage = () => {
                                     </div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3">{service.description}</p>
                                     <div className="mt-auto flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">
-                                        <span className="text-lg font-bold text-secondary">₹{service.price}</span>
+                                        <div className="flex flex-col">
+                                            <span className="text-lg font-bold text-secondary">₹{service.price}</span>
+                                            {service.duration && <span className="text-xs text-gray-500 dark:text-gray-400">{service.duration} mins</span>}
+                                        </div>
                                         <div className="flex gap-3">
                                             <button onClick={() => handleEditClick(service)} className="text-sm font-medium text-primary hover:text-primary/80">Edit</button>
                                             <button onClick={() => handleDelete(service.id)} className="text-sm font-medium text-red-600 hover:text-red-800">Delete</button>

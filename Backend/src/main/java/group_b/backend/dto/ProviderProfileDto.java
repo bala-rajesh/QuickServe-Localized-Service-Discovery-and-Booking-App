@@ -1,7 +1,6 @@
 package group_b.backend.dto;
 
 import lombok.Data;
-
 import java.util.List;
 
 @Data
@@ -16,5 +15,6 @@ public class ProviderProfileDto {
     private String bio;
     private String about;
     private String profileImageUrl;
+    private List<String> skills;
     private List<WorkingHourDTO> workingHours;
 }

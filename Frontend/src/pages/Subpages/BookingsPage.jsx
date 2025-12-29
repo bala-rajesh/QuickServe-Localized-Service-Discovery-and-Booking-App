@@ -11,6 +11,7 @@ const BookingsPage = () => {
     const { loading, error, bookingsData, fetchBookings } = usePaginatedBookings();
     const [editingAmountId, setEditingAmountId] = useState(null);
     const [amountValue, setAmountValue] = useState('');
+    const [selectedBooking, setSelectedBooking] = useState(null);
 
     const handleUpdateAndRefresh = async (bookingId, newStatus) => {
         await updateBookingStatusAPI(bookingId, { status: newStatus });
@@ -85,6 +86,7 @@ const BookingsPage = () => {
                             <tr>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Service</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date & Time</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
@@ -104,6 +106,14 @@ const BookingsPage = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">{booking.serviceTitle}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        <div 
+                                            className="truncate max-w-[150px] cursor-pointer text-primary hover:underline"
+                                            onClick={() => setSelectedBooking(booking)}
+                                        >
+                                            {booking.description || 'View Details'}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-secondary">
                                         {editingAmountId === booking.bookingId ? ( // In edit mode
                                             <div className="flex items-center gap-2">
@@ -162,6 +172,73 @@ const BookingsPage = () => {
                     onPageChange={fetchBookings}
                 />
             </div>
+
+            {/* Details Modal */}
+            {selectedBooking && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-200">
+                        <button 
+                            onClick={() => setSelectedBooking(null)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                        >
+                            ✕
+                        </button>
+                        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Booking Details</h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase">Customer</label>
+                                <p className="font-medium text-gray-900 dark:text-white">{selectedBooking.customerName}</p>
+                                <p className="text-sm text-gray-500">{selectedBooking.customerContactPhone || 'Hidden'}</p>
+                                <p className="text-sm text-gray-500">{selectedBooking.jobLocationAddress || 'Hidden'}</p>
+                            </div>
+                            
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase">Service</label>
+                                <p className="font-medium text-gray-900 dark:text-white">{selectedBooking.serviceTitle}</p>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase">Description</label>
+                                <div className="mt-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg text-sm text-gray-700 dark:text-gray-300 max-h-32 overflow-y-auto">
+                                    {selectedBooking.description || "No description provided."}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-500 uppercase">Date & Time</label>
+                                    <p className="font-medium text-gray-900 dark:text-white">{formatDate(selectedBooking.scheduledDate, selectedBooking.scheduledTime)}</p>
+                                </div>
+                                <div className="text-right">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase">Amount</label>
+                                    <p className="font-bold text-secondary text-lg">{selectedBooking.agreedPrice ? `₹${selectedBooking.agreedPrice}` : 'Not set'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            {selectedBooking.status === 'PENDING' && (
+                                <>
+                                    <button onClick={() => { handleUpdateAndRefresh(selectedBooking.bookingId, 'REJECTED'); setSelectedBooking(null); }} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Decline</button>
+                                    {selectedBooking.agreedPrice && (
+                                        <button onClick={() => { handleUpdateAndRefresh(selectedBooking.bookingId, 'CONFIRMED'); setSelectedBooking(null); }} className="flex-1 py-2.5 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 shadow-sm">Accept</button>
+                                    )}
+                                </>
+                            )}
+                            {selectedBooking.status === 'CONFIRMED' && (
+                                <>
+                                    <button onClick={() => { handleUpdateAndRefresh(selectedBooking.bookingId, 'CANCELLED'); setSelectedBooking(null); }} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+                                    <button onClick={() => { handleUpdateAndRefresh(selectedBooking.bookingId, 'COMPLETED'); setSelectedBooking(null); }} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 shadow-sm">Complete</button>
+                                </>
+                            )}
+                            {(selectedBooking.status !== 'PENDING' && selectedBooking.status !== 'CONFIRMED') && (
+                                <button onClick={() => setSelectedBooking(null)} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Close</button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

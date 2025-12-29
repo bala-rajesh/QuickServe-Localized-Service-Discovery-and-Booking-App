@@ -8,6 +8,7 @@ const BookingRequestsTable = ({ onAccept, onDecline }) => {
     const pendingRequests = useRecoilValue(pendingRequestsSelector);
     const [editingAmountId, setEditingAmountId] = useState(null);
     const [amountValue, setAmountValue] = useState('');
+    const [selectedRequest, setSelectedRequest] = useState(null);
     const navigate = useNavigate();
     const setStatusFilter = useSetRecoilState(statusFilterState);
 
@@ -46,11 +47,12 @@ const BookingRequestsTable = ({ onAccept, onDecline }) => {
                 <table className="w-full">
                     <thead>
                         <tr className="bg-background-light dark:bg-background-dark">
-                            <th className="w-3/12 px-4 py-3 text-left text-sm font-medium">Customer</th>
+                            <th className="w-2/12 px-4 py-3 text-left text-sm font-medium">Customer</th>
                             <th className="w-2/12 px-4 py-3 text-left text-sm font-medium">Service</th>
+                            <th className="w-2/12 px-4 py-3 text-left text-sm font-medium">Description</th>
                             <th className="w-2/12 px-4 py-3 text-left text-sm font-medium">Amount</th>
                             <th className="w-2/12 px-4 py-3 text-left text-sm font-medium">Date/Time</th>
-                            <th className="w-1/6 px-4 py-3 text-left text-sm font-medium">Actions</th>
+                            <th className="w-2/12 px-4 py-3 text-left text-sm font-medium">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -68,6 +70,14 @@ const BookingRequestsTable = ({ onAccept, onDecline }) => {
                                 </td>
                                 <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">
                                     {request.serviceTitle}
+                                </td>
+                                <td className="h-[72px] px-4 py-2 text-sm text-text-light/70 dark:text-text-dark/70">
+                                    <div 
+                                        className="truncate max-w-[150px] cursor-pointer text-primary hover:underline"
+                                        onClick={() => setSelectedRequest(request)}
+                                    >
+                                        {request.description || 'View Details'}
+                                    </div>
                                 </td>
                                 <td className="h-[72px] px-4 py-2 text-sm font-semibold text-secondary">
                                     {editingAmountId === request.bookingId ? ( // In edit mode
@@ -108,6 +118,58 @@ const BookingRequestsTable = ({ onAccept, onDecline }) => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Details Modal */}
+            {selectedRequest && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-200">
+                        <button 
+                            onClick={() => setSelectedRequest(null)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                        >
+                            ✕
+                        </button>
+                        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Booking Request Details</h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase">Customer</label>
+                                <p className="font-medium text-gray-900 dark:text-white">{selectedRequest.customerName}</p>
+                                <p className="text-sm text-gray-500">{selectedRequest.customerContactPhone}</p>
+                                <p className="text-sm text-gray-500">{selectedRequest.jobLocationAddress}</p>
+                            </div>
+                            
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase">Service</label>
+                                <p className="font-medium text-gray-900 dark:text-white">{selectedRequest.serviceTitle}</p>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase">Description</label>
+                                <div className="mt-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg text-sm text-gray-700 dark:text-gray-300 max-h-32 overflow-y-auto">
+                                    {selectedRequest.description || "No description provided."}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-500 uppercase">Date & Time</label>
+                                    <p className="font-medium text-gray-900 dark:text-white">{formatDate(selectedRequest.scheduledDate)}</p>
+                                </div>
+                                <div className="text-right">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase">Amount</label>
+                                    <p className="font-bold text-secondary text-lg">₹{selectedRequest.agreedPrice || 0}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <button onClick={() => { onDecline(selectedRequest.bookingId); setSelectedRequest(null); }} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Decline</button>
+                            <button onClick={() => { onAccept(selectedRequest.bookingId); setSelectedRequest(null); }} className="flex-1 py-2.5 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 shadow-sm">Accept</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
