@@ -1,0 +1,75 @@
+/* src/components/Header.css */
+.qs-header {
+    width: 100%;
+    height: 72px;
+    background: #ffffff;
+    display: flex;
+    justify-content: center; /* Centers the inner container */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    position: fixed; 
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.qs-header-container {
+    width: 100%;
+    max-width: 1280px; /* Matches the content width */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+}
+
+.qs-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.qs-logo {
+    width: 32px;
+    height: 32px;
+}
+
+.qs-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.qs-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.qs-book-btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.qs-book-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.qs-profile-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #e2e8f0;
+}
