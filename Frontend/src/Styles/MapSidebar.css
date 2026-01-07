@@ -1,0 +1,263 @@
+/* ADDED: Styles for Map Sidebar Component */
+
+/* Backdrop overlay - semi-transparent background */
+.map-sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Sidebar panel */
+.map-sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 400px;
+    max-width: 90vw;
+    background: white;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Scrollable content area */
+.map-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    padding-top: 50px;
+    /* Space for close button */
+}
+
+/* Close button */
+.map-sidebar-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    z-index: 1001;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.map-sidebar-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* Header section */
+.map-sidebar-header {
+    margin-bottom: 16px;
+}
+
+.map-sidebar-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: bold;
+    color: #111827;
+}
+
+.map-sidebar-category {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #007bff20;
+    color: #007bff;
+    border-radius: 16px;
+    font-size: 14px;
+    text-transform: capitalize;
+}
+
+/* Stats section */
+.map-sidebar-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.map-sidebar-rating,
+.map-sidebar-jobs {
+    font-size: 16px;
+    color: #374151;
+}
+
+.map-sidebar-rating {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+/* Distance indicator */
+.map-sidebar-distance {
+    padding: 12px;
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    color: #374151;
+    font-weight: 500;
+}
+
+/* Section styling */
+.map-sidebar-section {
+    margin-bottom: 20px;
+}
+
+.map-sidebar-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.map-sidebar-section p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.map-sidebar-section a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.map-sidebar-section a:hover {
+    text-decoration: underline;
+}
+
+/* Skills tags */
+.map-sidebar-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.map-sidebar-skill-tag {
+    padding: 6px 12px;
+    background-color: #007bff20;
+    color: #007bff;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+/* Action buttons */
+.map-sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.map-sidebar-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.map-sidebar-btn:active {
+    transform: scale(0.98);
+}
+
+.map-sidebar-btn-directions {
+    background-color: #4a90e2;
+    color: white;
+}
+
+.map-sidebar-btn-directions:hover {
+    background-color: #357abd;
+}
+
+.map-sidebar-btn-book {
+    background-color: #007bff;
+    color: white;
+}
+
+.map-sidebar-btn-book:hover {
+    background-color: #0056b3;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideUpBottom {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* Mobile responsive design */
+@media (max-width: 768px) {
+    .map-sidebar {
+        width: 100%;
+        max-width: 100%;
+        top: auto;
+        bottom: 0;
+        height: 70vh;
+        max-height: 70vh;
+        animation: slideUpBottom 0.3s ease-in-out;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .map-sidebar-content {
+        padding: 16px;
+        padding-top: 40px;
+    }
+
+    .map-sidebar-header h2 {
+        font-size: 20px;
+    }
+}
+
+/* Tablet responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .map-sidebar {
+        width: 350px;
+    }
+}
