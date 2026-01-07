@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import "../styles/Login.css";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/vitelogo.svg";
-import AuthService from "../api/AuthService";
+import { useAuth } from "../components/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -25,37 +26,16 @@ export default function Login() {
     const { email, password } = formData;
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include'
-      });
+      const data = await login(email, password);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        if (data.accessToken) {
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('user', JSON.stringify({
-            id: data.id,
-            role: data.role,
-            email: data.email,
-            fullName: data.fullName
-          }));
-        }
-
-        if (data.redirectUrl) {
-          navigate(data.redirectUrl);
-        } else {
-          navigate('/dashboard');
-        }
+      if (data.redirectUrl) {
+        navigate(data.redirectUrl);
       } else {
-        setError(data.message || "Login failed");
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error("Login error:", error);
-      setError("An error occurred during login.");
+      setError(error.message || "An error occurred during login.");
     } finally {
       setLoading(false);
     }

@@ -20,6 +20,7 @@ import group_b.backend.repository.ReviewRepository;
 import group_b.backend.repository.ServiceProviderRepository;
 import group_b.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -55,7 +56,8 @@ public class ProviderService {
         // --- Stats ---
         var stats = new ProviderDashboardDto.Stats();
         stats.setTodayEarnings(bookingRepository.getTodayEarnings(providerId, LocalDate.now()));
-        stats.setUpcomingCount(bookingRepository.countByProviderIdAndStatusAndScheduledDateAfter(providerId, BookingStatus.CONFIRMED, LocalDate.now()));
+        stats.setUpcomingCount(bookingRepository.countByProviderIdAndStatusAndScheduledDateAfter(providerId,
+                BookingStatus.CONFIRMED, LocalDate.now()));
         stats.setPendingRequestsCount(bookingRepository.countByProviderIdAndStatus(providerId, BookingStatus.PENDING));
         Double averageRating = reviewRepository.getAverageRatingByProviderId(providerId);
         stats.setAverageRating(averageRating != null ? BigDecimal.valueOf(averageRating) : BigDecimal.ZERO);
@@ -67,26 +69,27 @@ public class ProviderService {
         dashboardDto.setLists(new ProviderDashboardDto.Lists());
         dashboardDto.getLists().setNewRequests(
                 bookingRepository.findTop5ByProviderAndStatusOrderByScheduledDateAsc(provider, BookingStatus.PENDING)
-                        .stream().map(this::toBookingDto).collect(Collectors.toList())
-        );
+                        .stream().map(this::toBookingDto).collect(Collectors.toList()));
         dashboardDto.getLists().setUpcomingBookings(
                 bookingRepository.findTop5ByProviderAndStatusOrderByScheduledDateAsc(provider, BookingStatus.CONFIRMED)
-                        .stream().map(this::toBookingDto).collect(Collectors.toList())
-        );
+                        .stream().map(this::toBookingDto).collect(Collectors.toList()));
 
         return dashboardDto;
     }
 
-    public PaginatedResponseDto<BookingDto> getBookings(@NonNull Long providerId, BookingStatus status, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+    public PaginatedResponseDto<BookingDto> getBookings(@NonNull Long providerId, BookingStatus status,
+            LocalDate startDate, LocalDate endDate, Pageable pageable) {
         Page<Booking> bookingsPage;
 
         // Determine which repository method to call based on provided filters
         if (status != null && startDate != null && endDate != null) {
-            bookingsPage = bookingRepository.findByProviderIdAndStatusAndScheduledDateBetween(providerId, status, startDate, endDate, pageable);
+            bookingsPage = bookingRepository.findByProviderIdAndStatusAndScheduledDateBetween(providerId, status,
+                    startDate, endDate, pageable);
         } else if (status != null) {
             bookingsPage = bookingRepository.findByProviderIdAndStatus(providerId, status, pageable);
         } else if (startDate != null && endDate != null) {
-            bookingsPage = bookingRepository.findByProviderIdAndScheduledDateBetween(providerId, startDate, endDate, pageable);
+            bookingsPage = bookingRepository.findByProviderIdAndScheduledDateBetween(providerId, startDate, endDate,
+                    pageable);
         } else {
             bookingsPage = bookingRepository.findByProviderId(providerId, pageable);
         }
@@ -99,8 +102,7 @@ public class ProviderService {
                 bookingDtos,
                 bookingsPage.getNumber(),
                 bookingsPage.getTotalElements(),
-                bookingsPage.getTotalPages()
-        );
+                bookingsPage.getTotalPages());
     }
 
     @Transactional
@@ -108,7 +110,8 @@ public class ProviderService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + bookingId));
 
-        // Add any authorization logic here, e.g., check if the booking belongs to the provider
+        // Add any authorization logic here, e.g., check if the booking belongs to the
+        // provider
 
         booking.setStatus(newStatus);
         Booking updatedBooking = bookingRepository.save(booking);
@@ -162,7 +165,8 @@ public class ProviderService {
     }
 
     @Transactional
-    public ProviderServiceDTO updateService(@NonNull Long providerId, @NonNull Long serviceId, ProviderServiceDTO updatedData) {
+    public ProviderServiceDTO updateService(@NonNull Long providerId, @NonNull Long serviceId,
+            ProviderServiceDTO updatedData) {
         // Find the service by its ID
         ProviderServiceEntity service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + serviceId));
@@ -222,7 +226,7 @@ public class ProviderService {
         if ("week".equalsIgnoreCase(filter)) {
             startDate = date.with(DayOfWeek.MONDAY);
             endDate = date.with(DayOfWeek.SUNDAY);
-            
+
             // Initialize chart with 0 for all days
             Map<LocalDate, BigDecimal> dailyMap = new LinkedHashMap<>();
             for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
@@ -235,10 +239,9 @@ public class ProviderService {
                 totalRevenue = totalRevenue.add((BigDecimal) row[1]);
             }
 
-            dailyMap.forEach((d, amount) -> 
-                chartData.add(new EarningsAnalyticsDto.ChartData(d.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.US), amount))
-            );
-            
+            dailyMap.forEach((d, amount) -> chartData.add(new EarningsAnalyticsDto.ChartData(
+                    d.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.US), amount)));
+
             totalBookings = bookingRepository.findCompletedBookingsBetween(providerId, startDate, endDate).size();
 
         } else if ("month".equalsIgnoreCase(filter)) {
@@ -257,9 +260,8 @@ public class ProviderService {
                 totalRevenue = totalRevenue.add((BigDecimal) row[1]);
             }
 
-            dailyMap.forEach((day, amount) -> 
-                chartData.add(new EarningsAnalyticsDto.ChartData(String.valueOf(day), amount))
-            );
+            dailyMap.forEach(
+                    (day, amount) -> chartData.add(new EarningsAnalyticsDto.ChartData(String.valueOf(day), amount)));
 
             totalBookings = bookingRepository.findCompletedBookingsBetween(providerId, startDate, endDate).size();
 
@@ -277,12 +279,13 @@ public class ProviderService {
                 totalRevenue = totalRevenue.add((BigDecimal) row[1]);
             }
 
-            String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-            monthlyMap.forEach((month, amount) -> 
-                chartData.add(new EarningsAnalyticsDto.ChartData(months[month - 1], amount))
-            );
-            
-            totalBookings = bookingRepository.findCompletedBookingsBetween(providerId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)).size();
+            String[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+            monthlyMap.forEach(
+                    (month, amount) -> chartData.add(new EarningsAnalyticsDto.ChartData(months[month - 1], amount)));
+
+            totalBookings = bookingRepository
+                    .findCompletedBookingsBetween(providerId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31))
+                    .size();
         }
 
         EarningsAnalyticsDto dto = new EarningsAnalyticsDto();
@@ -297,13 +300,14 @@ public class ProviderService {
         LocalDate today = LocalDate.now();
         LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
 
-        List<Booking> completedBookings = bookingRepository.findCompletedBookingsBetween(providerId, startOfWeek, today);
+        List<Booking> completedBookings = bookingRepository.findCompletedBookingsBetween(providerId, startOfWeek,
+                today);
 
         Map<DayOfWeek, Double> earningsByDay = completedBookings.stream()
                 .collect(Collectors.groupingBy(
-                        booking -> booking.getScheduledDate() != null ? booking.getScheduledDate().getDayOfWeek() : null,
-                        Collectors.summingDouble(b -> b.getAgreedPrice().doubleValue())
-                ));
+                        booking -> booking.getScheduledDate() != null ? booking.getScheduledDate().getDayOfWeek()
+                                : null,
+                        Collectors.summingDouble(b -> b.getAgreedPrice().doubleValue())));
 
         return Arrays.stream(DayOfWeek.values()) // This ensures all 7 days are present
                 .sorted()
@@ -365,7 +369,7 @@ public class ProviderService {
         } else {
             dto.setSkills(Collections.emptyList());
         }
-        
+
         if (provider.getWorkingHours() != null) {
             dto.setWorkingHours(provider.getWorkingHours().stream().map(wh -> {
                 WorkingHourDTO whDto = new WorkingHourDTO();
@@ -396,14 +400,13 @@ public class ProviderService {
             existing = new ArrayList<>();
             provider.setWorkingHours(existing);
         }
-        
+
         // Map existing entities by day for easy lookup
         Map<String, ProviderWorkingHours> existingMap = existing.stream()
                 .collect(Collectors.toMap(
                         wh -> wh.getDayOfWeek().name(),
                         Function.identity(),
-                        (existingValue, newValue) -> existingValue
-                ));
+                        (existingValue, newValue) -> existingValue));
 
         for (WorkingHourDTO dto : dtos) {
             String dayKey = dto.getDay().toUpperCase();
