@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const userData = await AuthService.getCurrentUser();
         setUser(userData);
-        
+
         // Redirect logic if user is already logged in and trying to access public pages
         const publicPaths = ['/login', '/customer/signup', '/provider/signup', '/'];
         if (publicPaths.includes(location.pathname)) {
@@ -35,14 +35,31 @@ export const AuthProvider = ({ children }) => {
     checkUser();
   }, []);
 
+  const login = async (email, password) => {
+    const data = await AuthService.login({ email, password });
+    if (data.accessToken) {
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('user', JSON.stringify({
+        id: data.id,
+        role: data.role,
+        email: data.email,
+        fullName: data.fullName
+      }));
+      setUser(data);
+    }
+    return data;
+  };
+
   const logout = async () => {
     await AuthService.logout();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
     setUser(null);
     navigate('/');
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
