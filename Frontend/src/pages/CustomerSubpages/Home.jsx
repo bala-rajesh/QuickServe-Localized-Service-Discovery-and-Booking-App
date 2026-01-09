@@ -4,6 +4,8 @@ import { useAlert } from "../../components/CustomAlert";
 // ADDED: Map components for location-based provider discovery
 import TomTomMap from "../../components/TomTomMap";
 import MapSidebar from "../../components/MapSidebar";
+import { useRecoilState } from "recoil";
+import { userProfileState } from "../../state/atoms";
 
 // Simple Modal component
 function Modal({ visible, onClose, children }) {
@@ -81,7 +83,7 @@ export default function CustomerDashboard({ onBack }) {
 
   const [providers, setProviders] = useState([]);
   const [providersLoading, setProvidersLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState(null);
+  const [userProfile, setUserProfile] = useRecoilState(userProfileState);
 
   const [services, setServices] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(true);
@@ -89,7 +91,7 @@ export default function CustomerDashboard({ onBack }) {
 
   const categories = [
     { id: "all", name: "All Services" },
-    { id: "plumber", name: "Plumber" },
+    { id: "plumbing", name: "Plumber" },
     { id: "electrician", name: "Electrician" },
     { id: "tutor", name: "Tutor" },
     { id: "carpenter", name: "Carpenter" },
@@ -124,25 +126,12 @@ export default function CustomerDashboard({ onBack }) {
     fetchServices();
   }, [searchQuery, selectedCategory]);
 
-  // Fetch user profile
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await CustomerService.getProfile();
-        setUserProfile(data);
-      } catch (error) {
-        console.error("Failed to fetch user profile", error);
-      }
-    };
-    fetchProfile();
-  }, []);
-
   useEffect(() => {
     const fetchProviders = async () => {
       setProvidersLoading(true);
       try {
         const query = [searchQuery, selectedCategory === 'all' ? '' : selectedCategory].join(' ').trim();
-        const data = await CustomerService.searchServices(query);
+        const data = await CustomerService.searchProviders(query);
 
         // Map backend DTO to frontend provider structure
         const formattedProviders = data.map(p => ({

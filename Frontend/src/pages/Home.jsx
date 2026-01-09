@@ -1,7 +1,7 @@
 import React from "react";
-import "../styles/Home.css";               // ✅ correct path
+import "../styles/Home.css";               
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/vitelogo.svg"; // ✅ correct Vite asset import
+import logo from "../assets/vitelogo.svg";
 
 export default function Home() {
   const navigate = useNavigate();

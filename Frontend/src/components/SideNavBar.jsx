@@ -32,8 +32,9 @@ const SideNavBar = ({ isSideNavOpen }) => {
 
     return (
         <aside
-            className={`flex flex-col border-r border-border-light/20 dark:border-border-dark bg-card-light dark:bg-card-dark pt-4 transition-all duration-300 ease-in-out ${isSideNavOpen ? 'w-64' : 'w-0'
-                }`}
+            className={`flex flex-col border-r border-border-light/20 dark:border-border-dark bg-card-light dark:bg-card-dark pt-4 transition-all duration-300 ease-in-out ${
+                isSideNavOpen ? 'w-64' : 'w-0'
+            }`}
         >
             <div className="flex flex-1 flex-col justify-between p-4">
                 <div className="flex flex-col gap-4">

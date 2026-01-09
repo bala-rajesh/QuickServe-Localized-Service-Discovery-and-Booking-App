@@ -3,6 +3,8 @@ import Dashboard from '../../components/Dashboard';
 import Summary from '../../components/Summary';
 import BookingForm from '../../components/BookingForm';
 import { useAlert } from '../../components/CustomAlert';
+import CustomerService from '../../api/CustomerService';
+import RatingModal from '../../components/RatingModal'; // Assuming this new component is created
 
 
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -18,6 +20,11 @@ function CustomerBookingsPage() {
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [bookingToCancel, setBookingToCancel] = useState(null);
     const [cancelLoading, setCancelLoading] = useState(false);
+
+    // Rating Modal State
+    const [ratingModalOpen, setRatingModalOpen] = useState(false);
+    const [bookingToRate, setBookingToRate] = useState(null);
+    const [ratingLoading, setRatingLoading] = useState(false);
 
     // ... existing filter states ...
     const [activeTab, setActiveTab] = useState('All');
@@ -162,6 +169,40 @@ function CustomerBookingsPage() {
         }
     };
 
+    const openRatingModal = (booking) => {
+        setBookingToRate(booking);
+        setRatingModalOpen(true);
+    };
+
+    const closeRatingModal = () => {
+        setRatingModalOpen(false);
+        setBookingToRate(null);
+    };
+
+    const handleRatingSubmit = async ({ rating, comment }) => {
+        if (!bookingToRate) return;
+        if (rating === 0) {
+            showAlert("Please select a rating.", "warning");
+            return;
+        }
+
+        setRatingLoading(true);
+        try {
+            await CustomerService.createReview({
+                bookingId: bookingToRate.id,
+                rating,
+                comment
+            });
+            showAlert('Thank you for your review!', 'success');
+            fetchBookings(); // Refresh list to show it's reviewed
+            closeRatingModal();
+        } catch (error) {
+            showAlert(error.message || 'Failed to submit review.', 'error');
+        } finally {
+            setRatingLoading(false);
+        }
+    };
+
     return (
         <div className="w-full">
             <div style={{ width: '100%', boxSizing: 'border-box' }}>
@@ -172,6 +213,7 @@ function CustomerBookingsPage() {
                             loading={loading}
                             onRescheduleClick={handleRescheduleStart}
                             onCancelClick={openCancelModal}
+                            onRateClick={openRatingModal}
                             activeTab={activeTab}
                             onTabChange={setActiveTab}
                             searchFilters={searchFilters}
@@ -203,6 +245,14 @@ function CustomerBookingsPage() {
                 cancelText="No, Keep It"
                 loading={cancelLoading}
                 danger={true}
+            />
+
+            <RatingModal
+                isOpen={ratingModalOpen}
+                onClose={closeRatingModal}
+                onSubmit={handleRatingSubmit}
+                booking={bookingToRate}
+                loading={ratingLoading}
             />
         </div>
     );

@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useProfile } from '../../hooks/useProfile';
+import AuthService from '../../api/AuthService';
+import { useAlert } from '../../components/CustomAlert';
 
 const ProfileDetailPage = () => {
     const { loading, error, profile, updateProfile } = useProfile();
+    const { showAlert } = useAlert();
     const [formData, setFormData] = useState({});
     const [isEditingBasic, setIsEditingBasic] = useState(false);
     const [isEditingHours, setIsEditingHours] = useState(false);
@@ -91,6 +94,20 @@ const ProfileDetailPage = () => {
     const handleCancelHours = () => {
         setIsEditingHours(false);
         resetForm();
+    };
+
+    const handleChangePassword = async () => {
+        if (!profile?.email) {
+            showAlert("Email not found. Cannot request password change.", "warning");
+            return;
+        }
+        try {
+            await AuthService.requestPasswordChange(profile.email);
+            showAlert("A password reset link has been sent to your email.", "success");
+        } catch (error) {
+            console.error("Failed to request password change", error);
+            showAlert(error.message || "Failed to send password reset link.", "error");
+        }
     };
 
     const calculateCompletion = () => {
@@ -302,6 +319,20 @@ const ProfileDetailPage = () => {
                         </div>
                     ))}
                 </div>
+            </div>
+
+            {/* Security Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Security</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Click the button below to receive a password reset link to your registered email address ({profile?.email}).
+                </p>
+                <button
+                    onClick={handleChangePassword}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                >
+                    Send Password Reset Link
+                </button>
             </div>
         </div>
     );

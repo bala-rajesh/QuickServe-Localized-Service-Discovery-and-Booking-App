@@ -111,7 +111,7 @@ const BookingsPage = () => {
                                             className="truncate max-w-[150px] cursor-pointer text-primary hover:underline"
                                             onClick={() => setSelectedBooking(booking)}
                                         >
-                                            {booking.description || 'View Details'}
+                                            {'View Details'}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-secondary">

@@ -76,7 +76,7 @@ const BookingRequestsTable = ({ onAccept, onDecline }) => {
                                         className="truncate max-w-[150px] cursor-pointer text-primary hover:underline"
                                         onClick={() => setSelectedRequest(request)}
                                     >
-                                        {request.description || 'View Details'}
+                                        {'View Details'}
                                     </div>
                                 </td>
                                 <td className="h-[72px] px-4 py-2 text-sm font-semibold text-secondary">

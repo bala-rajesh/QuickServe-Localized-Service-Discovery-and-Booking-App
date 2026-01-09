@@ -4,7 +4,7 @@ import SearchFilters from './SearchFilters';
 import BookingCard from './BookingCard';
 import { useAuth } from './AuthContext';
 
-function Dashboard({ bookings, loading, onRescheduleClick, onCancelClick, activeTab, onTabChange, searchFilters, onFilterChange }) {
+function Dashboard({ bookings, loading, onRescheduleClick, onCancelClick, onRateClick, activeTab, onTabChange, searchFilters, onFilterChange }) {
     const { user } = useAuth();
     const [viewingBooking, setViewingBooking] = useState(null);
 
@@ -57,6 +57,7 @@ function Dashboard({ bookings, loading, onRescheduleClick, onCancelClick, active
                                 onDetailsClick={() => setViewingBooking(booking)}
                                 onRescheduleClick={() => onRescheduleClick(booking)}
                                 onCancelClick={() => onCancelClick(booking.id)}
+                                onRateClick={() => onRateClick(booking)}
                             />
                         ))}
                     </div>

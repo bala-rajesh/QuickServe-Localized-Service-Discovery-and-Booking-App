@@ -2,17 +2,20 @@ import React, { useState } from "react";
 import "../styles/Login.css";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/vitelogo.svg";
+import AuthService from "../api/AuthService";
 import { useAuth } from "../components/AuthContext";
+import { useAlert } from "../components/CustomAlert";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { setUser } = useAuth();
+  const { showAlert } = useAlert();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,19 +26,29 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const { email, password } = formData;
 
     try {
-      const data = await login(email, password);
+      const userData = await AuthService.login(formData);
 
-      if (data.redirectUrl) {
-        navigate(data.redirectUrl);
+      // Update the global user state, which will trigger updates in SideNavBar etc.
+      setUser(userData);
+
+      // Use the redirect URL from the backend
+      if (userData.redirectUrl) {
+        navigate(userData.redirectUrl);
       } else {
-        navigate('/dashboard');
+        // Fallback navigation if redirectUrl is not provided
+        if (userData.role === 'PROVIDER') {
+          navigate('/service-provider/dashboard');
+        } else {
+          navigate('/customer/dashboard');
+        }
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      setError(error.message || "An error occurred during login.");
+    } catch (err) {
+      const errorMessage = err.message || "Login failed. Please check your credentials.";
+      setError(errorMessage);
+      showAlert(errorMessage, "error");
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }

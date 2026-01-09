@@ -1,7 +1,6 @@
 import { atom } from 'recoil';
 
-// --- Dashboard Atoms ---
-// These atoms hold the pre-calculated data fetched from the /provider/dashboard endpoint.
+
 
 export const dashboardStatsState = atom({
     key: 'dashboardStatsState',
@@ -72,4 +71,9 @@ export const earningsFilterState = atom({
 export const earningsDateContextState = atom({
     key: 'earningsDateContextState',
     default: new Date(), // Defaults to today, used for calculating current week/month/year
+});
+
+export const userProfileState = atom({
+  key: 'userProfileState',
+  default: null,
 });

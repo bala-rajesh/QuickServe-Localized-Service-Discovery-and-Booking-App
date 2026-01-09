@@ -11,15 +11,18 @@ function BookingCard({
   price,
   status,
   providerImage,
+  isReviewed,
   onDetailsClick,
   onRescheduleClick,
-  onCancelClick
+  onCancelClick,
+  onRateClick
 }) {
 
   // Logic to determine badge colors based on status
   const getStatusBg = (s) => {
     if (s === 'Booked') return '#e8f5e9';
     if (s === 'In Progress') return '#fff8e1';
+    if (s === 'Completed') return '#e3f2fd';
     if (s === 'Rejected') return '#ffebee';
     return '#f1f5f9';
   };
@@ -28,6 +31,7 @@ function BookingCard({
     if (s === 'Booked') return '#2e7d32';
     if (s === 'In Progress') return '#f57f17';
     if (s === 'Rejected') return '#d32f2f';
+    if (s === 'Completed') return '#1e88e5';
     return '#475569';
   };
 
@@ -118,6 +122,30 @@ function BookingCard({
             >
               Cancel
             </button>
+          </>
+        )}
+
+        {/* Rating button for 'Completed' bookings */}
+        {status === 'Completed' && (
+          <>
+            {isReviewed ? (
+              <span style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '8px',
+                textAlign: 'center',
+                fontSize: '0.8rem',
+                fontWeight: 'bold',
+                color: '#2e7d32',
+                backgroundColor: '#e8f5e9'
+              }}>
+                Reviewed
+              </span>
+            ) : (
+              <button onClick={onRateClick} className="btn-reschedule">
+                Rate Service
+              </button>
+            )}
           </>
         )}
       </div>

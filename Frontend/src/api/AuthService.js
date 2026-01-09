@@ -39,10 +39,25 @@ const AuthService = {
 
   logout: async () => {
     try {
+      
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+
       await api.post('/auth/logout');
     } catch (err) {
-      // Ignore errors
+      console.error("Logout failed on the server, but the client session is cleared.", err);
     }
+  },
+
+  requestPasswordChange: async (email) => {
+    // This function is for an already logged-in user on their profile page.
+    // It reuses the 'forgot password' flow by automatically supplying the user's email.
+    if (!email) {
+      throw new Error("Email is required to request a password change.");
+    }
+
+    // Reuse the existing forgotPassword function. It already handles API calls and errors.
+    return AuthService.forgotPassword(email);
   },
 
   forgotPassword: async (email) => {

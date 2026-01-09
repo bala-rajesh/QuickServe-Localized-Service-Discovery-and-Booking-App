@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import CustomerService from "../../api/CustomerService";
 import { useAlert } from "../../components/CustomAlert";
+import AuthService from "../../api/AuthService";
 
 export default function ProfilePage() {
   const { showAlert } = useAlert();
@@ -15,8 +16,6 @@ export default function ProfilePage() {
 
   const [initialProfile, setInitialProfile] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -69,6 +68,20 @@ export default function ProfilePage() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!profile.email) {
+      showAlert("Email not available. Cannot request password change.", "warning");
+      return;
+    }
+    try {
+      await AuthService.requestPasswordChange(profile.email);
+      showAlert("A password reset link has been sent to your email.", "success");
+    } catch (error) {
+      console.error("Failed to request password change", error);
+      showAlert(error.message || "Failed to send password reset link.", "error");
+    }
+  };
+
   const handleSave = async () => {
     if (
       !profile.name ||
@@ -96,17 +109,6 @@ export default function ProfilePage() {
       return;
     }
 
-    if (newPassword || confirmPassword) {
-      if (!newPassword || !confirmPassword) {
-        showAlert("Fill both password fields", "warning");
-        return;
-      }
-      if (newPassword !== confirmPassword) {
-        showAlert("Passwords do not match", "warning");
-        return;
-      }
-    }
-
     setSaving(true);
     try {
       const profileData = {
@@ -121,8 +123,6 @@ export default function ProfilePage() {
       showAlert("Profile saved successfully ✅", "success");
       setInitialProfile(profile);
       setEditMode(false);
-      setNewPassword("");
-      setConfirmPassword("");
     } catch (error) {
       console.error("Failed to save profile", error);
       showAlert("Failed to save profile. Please try again.", "error");
@@ -134,8 +134,6 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setProfile(initialProfile);
     setEditMode(false);
-    setNewPassword("");
-    setConfirmPassword("");
   };
 
   if (loading) {
@@ -262,38 +260,21 @@ export default function ProfilePage() {
             />
           </div>
 
-          {/* Password Fields - Only in Edit Mode */}
-          {editMode && (
-            <>
-              <div style={styles.divider}>
-                <span style={styles.dividerText}>Change Password (Optional)</span>
-              </div>
+          <div style={styles.divider}>
+            <span style={styles.dividerText}>Security</span>
+          </div>
 
-              <div style={styles.row}>
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>New Password</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    style={styles.input}
-                  />
-                </div>
-
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>Confirm Password</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-            </>
-          )}
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Change Password</label>
+            <p style={styles.helpText}>
+              Click the button to receive a password reset link in your email.
+            </p>
+            <button
+              style={styles.changePasswordBtn}
+              onClick={handleChangePassword}>
+              Send Password Reset Link
+            </button>
+          </div>
 
           {/* Buttons */}
           <div style={styles.buttons}>
@@ -474,6 +455,24 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.3s ease",
     boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+  },
+  changePasswordBtn: {
+    width: 'auto',
+    padding: '10px 22px',
+    background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 12px rgba(100, 116, 139, 0.3)',
+  },
+  helpText: {
+    fontSize: '13px',
+    color: '#6b7280',
+    margin: '0 0 12px 0',
   },
 };
 

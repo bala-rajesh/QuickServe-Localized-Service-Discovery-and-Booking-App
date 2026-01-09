@@ -1,7 +1,7 @@
 import React from 'react';
 
 function BookingTabs({ activeTab, onTabChange }) {
-  const tabs = ['All', 'Booked', 'In Progress', 'Cancelled', 'Rejected'];
+  const tabs = ['All', 'Booked', 'In Progress', 'Completed', 'Cancelled', 'Rejected'];
   
   return (
     <div style={{ 
