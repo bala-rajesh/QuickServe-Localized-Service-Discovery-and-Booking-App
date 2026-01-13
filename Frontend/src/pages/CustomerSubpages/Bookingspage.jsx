@@ -35,26 +35,15 @@ function CustomerBookingsPage() {
     const fetchBookings = async () => {
         setLoading(true);
         try {
-            const queryParams = new URLSearchParams({
+            const data = await CustomerService.getBookings({
                 status: activeTab,
                 query: searchFilters.searchTerm,
                 serviceType: searchFilters.serviceType
             });
-            const response = await fetch(`http://localhost:8080/api/customer/bookings?${queryParams}`, {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setBookings(data);
-            } else {
-                console.error("Failed to fetch bookings:", response.status, response.statusText);
-            }
+            setBookings(data);
         } catch (error) {
             console.error("Error fetching bookings:", error);
+            showAlert("Failed to fetch bookings.", "error");
         } finally {
             setLoading(false);
         }
@@ -62,16 +51,11 @@ function CustomerBookingsPage() {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch('http://localhost:8080/api/customer/booking-stats', {
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setStats(data);
-            }
+            const data = await CustomerService.getBookingStats();
+            setStats(data);
         } catch (error) {
             console.error("Error fetching stats:", error);
+            // Optionally show an alert if stats are critical
         }
     };
 
@@ -111,24 +95,14 @@ function CustomerBookingsPage() {
         };
 
         try {
-            const response = await fetch(`http://localhost:8080/api/customer/book/${rescheduleData.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                showAlert("Booking rescheduled successfully!", "success");
-                switchToDashboard();
-                fetchBookings(); // Refresh list
-                fetchStats(); // Refresh stats
-            } else {
-                showAlert("Failed to reschedule booking.", "error");
-            }
+            await CustomerService.rescheduleBooking(rescheduleData.id, payload);
+            showAlert("Booking rescheduled successfully!", "success");
+            switchToDashboard();
+            fetchBookings(); // Refresh list
+            fetchStats(); // Refresh stats
         } catch (error) {
             console.error("Reschedule error:", error);
-            showAlert("An error occurred.", "error");
+            showAlert(error.message || "An error occurred during reschedule.", "error");
         }
     };
 
@@ -147,23 +121,14 @@ function CustomerBookingsPage() {
 
         setCancelLoading(true);
         try {
-            const response = await fetch(`http://localhost:8080/api/customer/book/${bookingToCancel}`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-
-            if (response.ok || response.status === 204) {
-                showAlert('Booking cancelled successfully', 'success');
-                fetchBookings();  // Refresh list
-                fetchStats();  // Update stats
-                closeCancelModal();
-            } else {
-                const errorText = await response.text();
-                showAlert(errorText || 'Failed to cancel booking', 'error');
-            }
+            await CustomerService.cancelBooking(bookingToCancel);
+            showAlert('Booking cancelled successfully', 'success');
+            fetchBookings();  // Refresh list
+            fetchStats();  // Update stats
+            closeCancelModal();
         } catch (error) {
             console.error('Cancel error:', error);
-            showAlert('An error occurred while canceling', 'error');
+            showAlert(error.message || 'An error occurred while canceling', 'error');
         } finally {
             setCancelLoading(false);
         }
@@ -189,7 +154,8 @@ function CustomerBookingsPage() {
         setRatingLoading(true);
         try {
             await CustomerService.createReview({
-                bookingId: bookingToRate.id,
+                bookingId: bookingToRate.id, // This is the booking ID
+                serviceId: bookingToRate.serviceId, // Pass the service ID for service-specific rating update
                 rating,
                 comment
             });

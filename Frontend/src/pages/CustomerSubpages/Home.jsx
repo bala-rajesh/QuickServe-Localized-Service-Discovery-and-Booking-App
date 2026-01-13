@@ -60,6 +60,7 @@ function Modal({ visible, onClose, children }) {
 export default function CustomerDashboard({ onBack }) {
   const [searchText, setSearchText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [pincode, setPincode] = useState(""); // New state for pincode
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [modalService, setModalService] = useState(null);
   const [modalProvider, setModalProvider] = useState(null);
@@ -69,6 +70,7 @@ export default function CustomerDashboard({ onBack }) {
   const [bookingService, setBookingService] = useState(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingData, setBookingData] = useState({
+    serviceId: null,
     name: "",
     phone: "",
     address: "",
@@ -79,6 +81,7 @@ export default function CustomerDashboard({ onBack }) {
 
   // ADDED: State for map view and sidebar
   const [selectedProvider, setSelectedProvider] = useState(null);
+  const [searchCounter, setSearchCounter] = useState(0);
   const [userLocation, setUserLocation] = useState(null);
 
   const [providers, setProviders] = useState([]);
@@ -104,17 +107,18 @@ export default function CustomerDashboard({ onBack }) {
     const fetchServices = async () => {
       setServicesLoading(true);
       try {
-        const params = new URLSearchParams({
+        // Use the centralized and authenticated API service
+        const data = await CustomerService.searchServices({
           query: searchQuery,
           category: selectedCategory,
-        });
-        const response = await fetch(`http://localhost:8080/api/customer/services/search?${params}`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-        if (!response.ok) throw new Error("Failed to fetch services");
-        const data = await response.json();
-        setServices(data);
+          pincode: pincode, // Pass pincode to the service
+        }); // Expects { services: [], pincodeUsed: "" }
+
+        setServices(data.services || []); // Ensure it's an array
+        // If the pincode input was empty on search, update it with the one used by the backend.
+        if (pincode === "" && data.pincodeUsed) {
+          setPincode(data.pincodeUsed);
+        }
       } catch (error) {
         console.error("Failed to fetch services:", error);
         showAlert("Could not load service data.", "error");
@@ -122,16 +126,15 @@ export default function CustomerDashboard({ onBack }) {
         setServicesLoading(false);
       }
     };
-
     fetchServices();
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, showAlert, searchCounter]);
 
   useEffect(() => {
     const fetchProviders = async () => {
       setProvidersLoading(true);
       try {
         const query = [searchQuery, selectedCategory === 'all' ? '' : selectedCategory].join(' ').trim();
-        const data = await CustomerService.searchProviders(query);
+        const data = await CustomerService.searchProviders({ query, pincode });
 
         // Map backend DTO to frontend provider structure
         const formattedProviders = data.map(p => ({
@@ -164,19 +167,14 @@ export default function CustomerDashboard({ onBack }) {
     };
 
     fetchProviders();
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, searchCounter]); // Use searchCounter to re-trigger on button click
 
   // Fetch reviews when a service modal is opened
   useEffect(() => {
     if (modalService) {
       const fetchReviews = async () => {
         try {
-          const response = await fetch(`http://localhost:8080/api/customer/providers/${modalService.providerId}/reviews`, {
-            method: 'GET',
-            credentials: 'include'
-          });
-          if (!response.ok) throw new Error("Failed to fetch reviews");
-          const reviewsData = await response.json();
+          const reviewsData = await CustomerService.getLatestReviewsForService(modalService.id);
           setModalReviews(reviewsData);
         } catch (error) {
           console.error("Failed to fetch reviews:", error);
@@ -187,21 +185,27 @@ export default function CustomerDashboard({ onBack }) {
     }
   }, [modalService]);
 
-  const handleSearch = () => setSearchQuery(searchText);
+  const handleSearch = () => {
+    setSearchQuery(searchText);
+    setSearchCounter(c => c + 1);
+  };
 
   const handleBook = (service) => {
     setBookingService(service);
+    // Ensure service ID is passed for review updates
+    setBookingData(prev => ({ ...prev, serviceId: service.id }));
 
     // Pre-fill booking data from user profile if available
     if (userProfile) {
-      setBookingData({
+      setBookingData(prev => ({
+        ...prev, // Preserve existing data like serviceId
         name: userProfile.fullName || "",
         phone: userProfile.phone ? String(userProfile.phone) : "",
         address: userProfile.address || "",
         date: "",
         time: "",
         description: "",
-      });
+      }));
     }
 
     setShowBookingForm(true);
@@ -308,16 +312,30 @@ export default function CustomerDashboard({ onBack }) {
       <h1 style={{ textAlign: "center", marginBottom: "20px" }}>Find Services</h1>
 
       {/* Search Bar */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px", gap: '8px' }}>
         <input
           type="text"
           placeholder="Search for services or providers..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           style={{
-            width: "70%",
+            width: "50%",
             padding: "12px",
-            borderRadius: "8px 0 0 8px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
+        />
+        {/* Pincode Input */}
+        <input
+          type="text"
+          placeholder="Pincode"
+          value={pincode}
+          onChange={(e) => setPincode(e.target.value)}
+          style={{
+            width: "20%",
+            padding: "12px",
+            borderRadius: "8px",
             border: "1px solid #ccc",
             fontSize: "16px",
           }}
@@ -326,7 +344,7 @@ export default function CustomerDashboard({ onBack }) {
           onClick={handleSearch}
           style={{
             padding: "12px 20px",
-            borderRadius: "0 8px 8px 0",
+            borderRadius: "8px",
             border: "1px solid #007bff",
             backgroundColor: "#007bff",
             color: "#fff",
@@ -454,7 +472,7 @@ export default function CustomerDashboard({ onBack }) {
                   <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#555" }}>
                     Provider:{" "}
                     <span
-                      onClick={() => viewProviderProfile(s.providerId)}
+                      onClick={() => viewProviderProfile(s.providerId)} // Keep this for provider profile modal
                       style={{
                         color: "#007bff",
                         cursor: "pointer",
@@ -464,6 +482,10 @@ export default function CustomerDashboard({ onBack }) {
                       {s.providerName}
                     </span>
                   </p>
+                  <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#555" }}>
+                    ⭐ {s.serviceRating ? s.serviceRating.toFixed(1) : '0.0'} ({s.serviceReviewCount || 0} reviews)
+                  </p>
+
                   <p style={{ margin: "0 0 12px 0", fontSize: "14px", color: "#555" }}>
                     Price: ₹{s.price} | Duration: {s.duration ? `${s.duration} mins` : 'N/A'}
                   </p>
@@ -600,6 +622,7 @@ export default function CustomerDashboard({ onBack }) {
         {modalService && (
           <>
             <h2 style={{ marginBottom: "8px" }}>{modalService.name}</h2>
+            {/* Provider link */}
             <p style={{ margin: "0 0 8px 0" }}>
               <strong>Provider:</strong>{" "}
               <span
@@ -616,6 +639,7 @@ export default function CustomerDashboard({ onBack }) {
                 {modalService.providerName}
               </span>
             </p>
+            {/* Service details */}
             <p style={{ margin: "0 0 8px 0" }}>
               <strong>Price:</strong> ₹{modalService.price} | <strong>Duration:</strong>{" "}
               {modalService.duration ? `${modalService.duration} mins` : 'N/A'}
@@ -624,9 +648,13 @@ export default function CustomerDashboard({ onBack }) {
               <strong>Details:</strong> {modalService.description}
             </p>
 
+            {/* Service-specific reviews */}
             {/* Latest Reviews */}
             <div style={{ margin: "10px 0", borderTop: "1px solid #ddd", paddingTop: "10px" }}>
-              <h3 style={{ marginBottom: "6px" }}>Latest Reviews (⭐ {modalService.providerRating.toFixed(1)})</h3>
+              <h3 style={{ marginBottom: "6px" }}>
+                Latest Reviews for this Service 
+                (⭐ {modalService.serviceRating ? modalService.serviceRating.toFixed(1) : '0.0'}) ({modalService.serviceReviewCount || 0} reviews)
+              </h3>
               {modalReviews.length ? (
                 <ul style={{ paddingLeft: "20px" }}>
                   {modalReviews.map((review) => (
@@ -637,7 +665,7 @@ export default function CustomerDashboard({ onBack }) {
                   ))}
                 </ul>
               ) : (
-                <p>No previous bookings</p>
+                <p>No reviews for this service yet.</p>
               )}
             </div>
 
