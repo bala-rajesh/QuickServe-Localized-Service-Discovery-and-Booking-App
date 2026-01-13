@@ -6,7 +6,6 @@ target/
 secrets.properties
 
 ### Security - NEVER commit these files ###
-application.properties
 application-secrets.properties
 *.env
 .env

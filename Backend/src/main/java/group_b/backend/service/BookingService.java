@@ -4,14 +4,17 @@ import group_b.backend.dto.BookingDto;
 import group_b.backend.dto.CreateBookingRequestDto;
 import group_b.backend.dto.RescheduleBookingRequestDto;
 import group_b.backend.exception.ResourceNotFoundException;
+import group_b.backend.model.ProviderServiceEntity;
 import group_b.backend.model.Booking;
 import group_b.backend.model.BookingStatus;
 import group_b.backend.model.ServiceProvider;
 import group_b.backend.model.User;
 import group_b.backend.repository.BookingRepository;
 import group_b.backend.repository.ServiceProviderRepository;
+import group_b.backend.repository.ProviderServiceRepository;
 import group_b.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +28,14 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final ServiceProviderRepository serviceProviderRepository;
+    private final ProviderServiceRepository providerServiceRepository; // Inject ProviderServiceRepository
 
     @Transactional
     public BookingDto createBooking(String userEmail, CreateBookingRequestDto requestDto) {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
 
+        // Fetch Provider
         ServiceProvider provider = serviceProviderRepository
                 .findById(Objects.requireNonNull(requestDto.getProviderId(), "Provider ID must not be null"))
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -39,6 +44,15 @@ public class BookingService {
         Booking booking = new Booking();
         booking.setCustomer(customer);
         booking.setProvider(provider);
+
+        // Fetch and set the specific service if provided
+        if (requestDto.getServiceId() != null) {
+            @NonNull Long serviceId = requestDto.getServiceId();
+            ProviderServiceEntity service = providerServiceRepository.findById(serviceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Service not found with id: " + serviceId));
+            booking.setService(service);
+        }
+
         booking.setServiceTitle(requestDto.getServiceTitle());
         booking.setJobLocationAddress(requestDto.getAddress());
         booking.setCustomerContactPhone(requestDto.getPhone());

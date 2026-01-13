@@ -22,7 +22,7 @@ public class ServiceProvider {
     @Column(name = "bio_short")
     private String bioShort;
 
-    @Column(name = "profile_image_url")
+    @Column(name = "profile_image_url", columnDefinition = "TEXT")
     private String profileImageUrl;
 
     private String category;

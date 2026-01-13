@@ -24,6 +24,10 @@ public class Booking {
     @JoinColumn(name = "provider_id", referencedColumnName = "provider_id")
     private ServiceProvider provider;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id") // This links the booking to a specific service
+    private ProviderServiceEntity service;
+
     @Column(name = "service_title")
     private String serviceTitle;
 

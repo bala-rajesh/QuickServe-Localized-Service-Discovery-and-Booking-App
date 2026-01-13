@@ -4,6 +4,7 @@ import group_b.backend.dto.CustomerProfileDto;
 import group_b.backend.dto.SearchResultDto;
 import group_b.backend.dto.ReviewDto;
 import group_b.backend.dto.ServiceSearchResultDto;
+import group_b.backend.dto.ServiceSearchResponseDto;
 import group_b.backend.exception.ResourceNotFoundException;
 import group_b.backend.model.Booking;
 import group_b.backend.model.ProviderServiceEntity;
@@ -16,10 +17,11 @@ import group_b.backend.repository.ProviderServiceRepository;
 import group_b.backend.repository.ReviewRepository;
 import group_b.backend.repository.ServiceProviderRepository;
 import group_b.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.math.BigDecimal;
@@ -38,6 +40,7 @@ public class CustomerService {
     private final ProviderServiceRepository providerServiceRepository;
     private final ReviewRepository reviewRepository;
     private final BookingRepository bookingRepository;
+    private final ReviewService reviewService; // Inject the new ReviewService
 
     public CustomerProfileDto getProfile(String email) {
         User user = userRepository.findByEmail(email)
@@ -77,16 +80,34 @@ public class CustomerService {
         return responseDto;
     }
 
-    public List<SearchResultDto> searchServiceProviders(String query) {
+    public List<SearchResultDto> searchServiceProviders(String query, String pincode, String userEmail) {
+        String effectivePincode = pincode;
+        // If no pincode is provided AND a user is logged in, use their pincode as default.
+        if ((effectivePincode == null || effectivePincode.isBlank()) && userEmail != null) {
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found for email: " + userEmail));
+            effectivePincode = user.getPincode();
+        }
+        final String finalPincode = effectivePincode;
+
         List<ServiceProvider> providers = serviceProviderRepository.findAll();
 
         return providers.stream()
                 .filter(p -> {
+                    // Pincode Filter: If a pincode is specified, filter by it.
+                    if (finalPincode != null && !finalPincode.isEmpty()) {
+                        String providerPincode = p.getUser() != null ? p.getUser().getPincode() : null;
+                        if (!doPincodesMatch(finalPincode, providerPincode)) {
+                            return false; // Exclude if pincodes don't match
+                        }
+                    }
+
                     if (query == null || query.isEmpty())
                         return true;
                     String q = query.toLowerCase();
+                    // Improved category matching to handle variations like 'plumber' vs 'plumbing'.
                     return (p.getBusinessName() != null && p.getBusinessName().toLowerCase().contains(q)) ||
-                            (p.getCategory() != null && p.getCategory().toLowerCase().contains(q)) ||
+                            (p.getCategory() != null && (p.getCategory().toLowerCase().contains(q) || q.contains(p.getCategory().toLowerCase()))) ||
                             (p.getBioShort() != null && p.getBioShort().toLowerCase().contains(q));
                 })
                 .map(p -> {
@@ -120,25 +141,70 @@ public class CustomerService {
                 .collect(Collectors.toList());
     }
 
-    public List<ServiceSearchResultDto> searchServices(String query, String category) {
+    public ServiceSearchResponseDto searchServices(String query, String category, String pincode, String userEmail) {
+        String effectivePincode = pincode;
+        if (effectivePincode == null || effectivePincode.isBlank()) {
+            // If no pincode is provided, use the logged-in user's pincode.
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found for email: " + userEmail));
+            effectivePincode = user.getPincode();
+        }
+
+        final String finalPincode = effectivePincode;
+
         List<ProviderServiceEntity> services = providerServiceRepository.findAll(); // In a real app, this would be a
                                                                                     // more efficient query
 
-        return services.stream()
+        List<ServiceSearchResultDto> filteredServices = services.stream()
                 .filter(ProviderServiceEntity::isActive)
                 .filter(service -> {
+                    ServiceProvider provider = service.getProvider();
+                    // A service is only searchable if it has an active provider
+                    // with a user account and a business name.
+                    if (provider == null || provider.getUser() == null || provider.getBusinessName() == null || provider.getBusinessName().isEmpty()) {
+                        return false;
+                    }
+
+                    // Pincode Filter: Only include providers in the specified or user's local area.
+                    if (finalPincode != null && !finalPincode.isEmpty()) {
+                        String providerPincode = provider.getUser().getPincode();
+                        if (!doPincodesMatch(finalPincode, providerPincode)) {
+                            return false; // Exclude if pincodes don't match
+                        }
+                    }
+
                     boolean categoryMatch = "all".equalsIgnoreCase(category)
-                            || service.getProvider().getCategory().equalsIgnoreCase(category);
+                            || (provider.getCategory() != null && provider.getCategory().toLowerCase().contains(category.toLowerCase()));
                     boolean queryMatch = query == null || query.isEmpty() ||
-                            service.getName().toLowerCase().contains(query.toLowerCase()) ||
-                            (service.getDescription() != null
-                                    && service.getDescription().toLowerCase().contains(query.toLowerCase()))
-                            ||
-                            service.getProvider().getBusinessName().toLowerCase().contains(query.toLowerCase());
+                            (service.getName() != null && service.getName().toLowerCase().contains(query.toLowerCase())) ||
+                            (service.getDescription() != null && service.getDescription().toLowerCase().contains(query.toLowerCase())) ||
+                            (provider.getBusinessName() != null && provider.getBusinessName().toLowerCase().contains(query.toLowerCase()));
                     return categoryMatch && queryMatch;
                 })
                 .map(this::mapToServiceSearchResultDto)
                 .collect(Collectors.toList());
+
+        return new ServiceSearchResponseDto(filteredServices, finalPincode);
+    }
+
+    /**
+     * Helper method to compare two pincodes.
+     * It performs a prefix match on the first 3 characters if both pincodes are long enough.
+     * Otherwise, it falls back to an exact match.
+     */
+    private boolean doPincodesMatch(String searchPincode, String providerPincode) {
+        if (searchPincode == null || searchPincode.isBlank() || providerPincode == null || providerPincode.isBlank()) {
+            return false;
+        }
+
+        String trimmedSearch = searchPincode.trim();
+        String trimmedProvider = providerPincode.trim();
+
+        if (trimmedSearch.length() >= 3 && trimmedProvider.length() >= 3) {
+            return trimmedSearch.substring(0, 3).equals(trimmedProvider.substring(0, 3));
+        } else {
+            return trimmedSearch.equals(trimmedProvider);
+        }
     }
 
     private ServiceSearchResultDto mapToServiceSearchResultDto(ProviderServiceEntity service) {
@@ -160,20 +226,50 @@ public class CustomerService {
             dto.setLongitude(provider.getLongitude());
             if (provider.getUser() != null) {
                 dto.setProviderAddress(provider.getUser().getAddress());
+                dto.setPincode(provider.getUser().getPincode());
             }
+            dto.setServiceRating(service.getRating());
+            dto.setServiceReviewCount(service.getReviewCount());
         }
         return dto;
     }
 
-    public List<ReviewDto> getLatestReviewsForProvider(Long providerId) {
-        // This assumes a method exists in ReviewRepository to fetch reviews by provider
-        // ID.
-        // A more direct link from Review to ServiceProvider would be ideal.
-        // This query would join through Booking.
-        return reviewRepository.findTop5ByBooking_Provider_IdOrderByCreatedAtDesc(providerId)
-                .stream()
-                .map(this::mapToReviewDto)
-                .collect(Collectors.toList());
+    @Transactional
+    public List<ReviewDto> getLatestReviewsForService(Long serviceId) {
+        return reviewRepository.findTop5ByBooking_Service_IdOrderByCreatedAtDesc(serviceId).stream().map(this::mapToReviewDto).collect(Collectors.toList());
+    }
+    @Transactional
+    public ReviewDto createReview(String customerEmail, ReviewDto reviewDto) {
+        User customer = userRepository.findByEmail(customerEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with email: " + customerEmail));
+
+        Booking booking = bookingRepository.findById(reviewDto.getBookingId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + reviewDto.getBookingId()));
+
+        // Ensure the booking belongs to the customer
+        if (!booking.getCustomer().getId().equals(customer.getId())) {
+            throw new SecurityException("Unauthorized: Booking does not belong to this customer.");
+        }
+
+        // Ensure the booking is completed before reviewing
+        if (booking.getStatus() != BookingStatus.COMPLETED) {
+            throw new IllegalStateException("Cannot review a booking that is not completed.");
+        }
+
+        // Check if a review already exists for this booking
+        if (reviewRepository.findByBookingId(booking.getId()).isPresent()) {
+            throw new IllegalStateException("A review already exists for this booking.");
+        }
+
+        Review review = new Review();
+        review.setBooking(booking);
+        review.setRating(reviewDto.getRating());
+        review.setComment(reviewDto.getComment());
+        review.setCreatedAt(LocalDateTime.now());
+
+        Review savedReview = reviewRepository.save(review);
+        reviewService.updateStatsForNewReview(booking); // Delegate to ReviewService to update provider/service stats
+        return mapToReviewDto(savedReview);
     }
 
     @Transactional(readOnly = true)
@@ -185,17 +281,27 @@ public class CustomerService {
         List<Booking> bookings = bookingRepository.findAll().stream()
                 .filter(b -> b.getCustomer() != null && b.getCustomer().getId().equals(user.getId()))
                 .filter(b -> {
-                    // Status Filter
+                    // Status Filter Logic
                     if (statusFilter != null && !statusFilter.isEmpty() && !statusFilter.equalsIgnoreCase("All")) {
                         BookingStatus bs = b.getStatus();
-                        if (statusFilter.equalsIgnoreCase("Booked") && bs != BookingStatus.CONFIRMED)
-                            return false;
-                        if (statusFilter.equalsIgnoreCase("In Progress") && bs != BookingStatus.PENDING)
-                            return false;
-                        if (statusFilter.equalsIgnoreCase("Cancelled") && bs != BookingStatus.CANCELLED)
-                            return false;
-                        if (statusFilter.equalsIgnoreCase("Rejected") && bs != BookingStatus.REJECTED)
-                            return false;
+                        boolean match;
+                        switch (statusFilter.toLowerCase()) {
+                            case "booked":
+                                match = (bs == BookingStatus.CONFIRMED);
+                                break;
+                            case "in progress":
+                                match = (bs == BookingStatus.PENDING);
+                                break;
+                            case "completed":
+                                match = (bs == BookingStatus.COMPLETED);
+                                break;
+                            case "cancelled":
+                                match = (bs == BookingStatus.CANCELLED || bs == BookingStatus.REJECTED);
+                                break;
+                            default:
+                                match = false; // Should not happen with controlled tabs
+                        }
+                        if (!match) return false;
                     }
                     // Query Filter (Search Term)
                     if (searchQuery != null && !searchQuery.isEmpty()) {
@@ -220,6 +326,7 @@ public class CustomerService {
         return bookings.stream().map(b -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", b.getId());
+            map.put("serviceId", b.getService() != null ? b.getService().getId() : null); // Add serviceId
             map.put("providerName", b.getProvider() != null ? b.getProvider().getBusinessName() : "Unknown Provider");
             map.put("serviceType", b.getServiceTitle());
             map.put("date", b.getScheduledDate() != null ? b.getScheduledDate().toString() : "");
@@ -229,20 +336,22 @@ public class CustomerService {
 
             String status = "UNKNOWN";
             if (b.getStatus() != null) {
-                if (b.getStatus() == BookingStatus.CONFIRMED)
-                    status = "Booked";
-                else if (b.getStatus() == BookingStatus.PENDING)
-                    status = "In Progress";
-                else if (b.getStatus() == BookingStatus.CANCELLED)
-                    status = "Cancelled";
-                else if (b.getStatus() == BookingStatus.REJECTED)
-                    status = "Rejected";
-                else
-                    status = b.getStatus().name();
+                switch (b.getStatus()) {
+                    case CONFIRMED: status = "Booked"; break;
+                    case PENDING: status = "In Progress"; break;
+                    case COMPLETED: status = "Completed"; break;
+                    case CANCELLED: status = "Cancelled"; break;
+                    case REJECTED: status = "Rejected"; break;
+                    default: status = b.getStatus().name(); break;
+                }
             }
             map.put("status", status);
             map.put("image", (b.getProvider() != null) ? b.getProvider().getProfileImageUrl() : null);
             map.put("description", b.getDescription() != null ? b.getDescription() : b.getServiceTitle());
+            // Add a flag to indicate if the booking has already been reviewed.
+            // This allows the frontend to hide the 'Rate' button if a review exists.
+            map.put("isReviewed", reviewRepository.findByBookingId(b.getId()).isPresent());
+
             return map;
         }).collect(Collectors.toList());
     }

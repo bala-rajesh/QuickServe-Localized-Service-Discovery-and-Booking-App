@@ -1,100 +1,101 @@
 package group_b.backend.controller;
 
-import group_b.backend.dto.CustomerProfileDto;
-import group_b.backend.dto.SearchResultDto;
 import group_b.backend.dto.BookingDto;
-import group_b.backend.dto.ReviewDto;
-import group_b.backend.dto.ServiceSearchResultDto;
-import group_b.backend.dto.CreateBookingRequestDto;
+import group_b.backend.dto.CustomerProfileDto;
 import group_b.backend.dto.RescheduleBookingRequestDto;
+import group_b.backend.dto.ReviewDto;
+import group_b.backend.dto.SearchResultDto;
+import group_b.backend.dto.ServiceSearchResponseDto;
 import group_b.backend.service.BookingService;
 import group_b.backend.service.CustomerService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customer")
+@RequiredArgsConstructor
 public class CustomerController {
 
-    @Autowired
-    private CustomerService customerService;
-
-    @Autowired
-    private BookingService bookingService;
+    private final CustomerService customerService;
+    private final BookingService bookingService;
 
     @GetMapping("/profile")
-    public ResponseEntity<CustomerProfileDto> getProfile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return ResponseEntity.ok(customerService.getProfile(email));
+    public ResponseEntity<CustomerProfileDto> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(customerService.getProfile(userDetails.getUsername()));
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<CustomerProfileDto> updateProfile(@RequestBody CustomerProfileDto profileUpdate) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return ResponseEntity.ok(customerService.updateProfile(email, profileUpdate));
+    public ResponseEntity<CustomerProfileDto> updateProfile(@AuthenticationPrincipal UserDetails userDetails, @RequestBody CustomerProfileDto profileUpdate) {
+        return ResponseEntity.ok(customerService.updateProfile(userDetails.getUsername(), profileUpdate));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<SearchResultDto>> searchServiceProviders(
-            @RequestParam(required = false, defaultValue = "") String query) {
-        return ResponseEntity.ok(customerService.searchServiceProviders(query));
+    public List<SearchResultDto> searchProviders(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String pincode,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        String userEmail = null;
+        if (userDetails != null) {
+            userEmail = userDetails.getUsername();
+        }
+
+        // Pass null for email if user is not authenticated
+        return customerService.searchServiceProviders(query, pincode, userEmail);
     }
 
     @GetMapping("/services/search")
-    public ResponseEntity<List<ServiceSearchResultDto>> searchServices(
-            @RequestParam(required = false, defaultValue = "") String query,
-            @RequestParam(required = false, defaultValue = "all") String category) {
-        return ResponseEntity.ok(customerService.searchServices(query, category));
+    public ServiceSearchResponseDto searchServices(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "all") String category,
+            @RequestParam(required = false) String pincode,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null) {
+            throw new SecurityException("User must be authenticated to search services.");
+        }
+        String userEmail = userDetails.getUsername();
+        return customerService.searchServices(query, category, pincode, userEmail);
     }
 
     @GetMapping("/bookings")
-    public ResponseEntity<List<Map<String, Object>>> getBookings(
-            @RequestParam(required = false, defaultValue = "All") String status,
-            @RequestParam(required = false, defaultValue = "") String query,
-            @RequestParam(required = false, defaultValue = "") String serviceType) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return ResponseEntity.ok(customerService.getBookings(email, status, query, serviceType));
-    }
-
-    @PostMapping("/book")
-    public ResponseEntity<BookingDto> createBooking(@RequestBody CreateBookingRequestDto requestDto) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return ResponseEntity.ok(bookingService.createBooking(email, requestDto));
-    }
-
-    @PutMapping("/book/{bookingId}")
-    public ResponseEntity<BookingDto> rescheduleBooking(@PathVariable Long bookingId,
-            @RequestBody RescheduleBookingRequestDto requestDto) {
-        return ResponseEntity.ok(bookingService.rescheduleBooking(bookingId, requestDto));
-    }
-
-    @DeleteMapping("/book/{bookingId}")
-    public ResponseEntity<Void> cancelBooking(@PathVariable Long bookingId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        bookingService.cancelBooking(bookingId, email);
-        return ResponseEntity.noContent().build();
+    public List<Map<String, Object>> getBookings(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String serviceType) {
+        return customerService.getBookings(userDetails.getUsername(), status, query, serviceType);
     }
 
     @GetMapping("/booking-stats")
-    public ResponseEntity<Map<String, Object>> getBookingStats() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return ResponseEntity.ok(customerService.getBookingStats(email));
+    public Map<String, Object> getBookingStats(@AuthenticationPrincipal UserDetails userDetails) {
+        return customerService.getBookingStats(userDetails.getUsername());
     }
 
-    @GetMapping("/providers/{providerId}/reviews")
-    public ResponseEntity<List<ReviewDto>> getProviderReviews(@PathVariable Long providerId) {
-        return ResponseEntity.ok(customerService.getLatestReviewsForProvider(providerId));
+    @PostMapping("/reviews")
+    public ReviewDto createReview(@AuthenticationPrincipal UserDetails userDetails, @RequestBody ReviewDto reviewDto) {
+        return customerService.createReview(userDetails.getUsername(), reviewDto);
+    }
+
+    @GetMapping("/services/{serviceId}/reviews")
+    public List<ReviewDto> getServiceReviews(@PathVariable Long serviceId) {
+        return customerService.getLatestReviewsForService(serviceId);
+    }
+
+    @PutMapping("/book/{bookingId}")
+    public BookingDto rescheduleBooking(@PathVariable Long bookingId, @RequestBody RescheduleBookingRequestDto dto) {
+        return bookingService.rescheduleBooking(bookingId, dto);
+    }
+
+    @PutMapping("/bookings/{bookingId}/cancel")
+    public ResponseEntity<Void> cancelBooking(@PathVariable Long bookingId, @AuthenticationPrincipal UserDetails userDetails) {
+        bookingService.cancelBooking(bookingId, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
     }
 }

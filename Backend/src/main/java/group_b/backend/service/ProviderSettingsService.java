@@ -133,6 +133,8 @@ public class ProviderSettingsService {
         dto.setPrice(entity.getPrice());
         dto.setDuration(entity.getDuration());
         dto.setActive(entity.isActive());
+        dto.setRating(entity.getRating()); // Map service-specific rating
+        dto.setReviewCount(entity.getReviewCount()); // Map service-specific review count
         return dto;
     }
 

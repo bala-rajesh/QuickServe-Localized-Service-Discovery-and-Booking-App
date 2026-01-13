@@ -347,6 +347,7 @@ public class ProviderService {
         dto.setScheduledDate(booking.getScheduledDate());
         dto.setScheduledTime(booking.getScheduledTime());
         dto.setStatus(booking.getStatus());
+        dto.setDescription(booking.getDescription());
         return dto;
     }
 
@@ -391,6 +392,8 @@ public class ProviderService {
         dto.setPrice(entity.getPrice());
         dto.setDuration(entity.getDuration());
         dto.setActive(entity.isActive());
+        dto.setRating(entity.getRating()); // Map service-specific rating
+        dto.setReviewCount(entity.getReviewCount()); // Map service-specific review count
         return dto;
     }
 

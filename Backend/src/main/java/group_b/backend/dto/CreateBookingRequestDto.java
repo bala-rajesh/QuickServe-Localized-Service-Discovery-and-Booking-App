@@ -8,8 +8,9 @@ import java.time.LocalTime;
 @Data
 public class CreateBookingRequestDto {
     private Long providerId;
+    private Long serviceId; // Added to link to a specific service
     private String serviceTitle;
-    private String customerName;
+    private String customerName; // This might be redundant if customer is identified by email
     private String phone;
     private String address;
     private LocalDate date;

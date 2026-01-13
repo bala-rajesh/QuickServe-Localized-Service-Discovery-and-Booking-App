@@ -12,4 +12,6 @@ public class ProviderServiceDTO {
     private BigDecimal price;
     private boolean active;
     private Integer duration;
+    private BigDecimal rating; // New field for service-specific rating
+    private Integer reviewCount; // New field for service-specific review count
 }
